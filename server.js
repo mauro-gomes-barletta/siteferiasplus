@@ -94,12 +94,6 @@ app.post('/consultas', async (req, res) => {
     const { startDate, daysAvailable, periods, bankHours, location } = req.body;
 
     try {
-        // Salva a consulta no banco de dados
-        const result = await pool.query(
-            'INSERT INTO consultas (start_date, days_available, periods, bank_hours, location, user_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-            [startDate, daysAvailable, periods, bankHours, location, req.user.id] // req.user.id deve ser configurado após autenticação
-        );
-
         // Gera o prompt para a IA
         const prompt = `
             Baseado nas informações:
@@ -112,17 +106,18 @@ app.post('/consultas', async (req, res) => {
         `;
 
         // Chama a API da OpenAI
-        const aiResponse = await openai.createCompletion({
-            model: 'text-davinci-003',
-            prompt: prompt,
-            max_tokens: 150
+        const aiResponse = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [{ role: "user", content: prompt }],
+            max_tokens: 150,
         });
 
-        const aiResult = aiResponse.data.choices[0].text.trim();
+        const aiResult = aiResponse.choices[0].message.content.trim();
 
+        // Retorna o resultado para o frontend
         res.status(200).json({ result: aiResult });
     } catch (err) {
-        console.error(err);
+        console.error('Erro ao processar a consulta:', err);
         res.status(500).json({ error: 'Erro ao processar a consulta' });
     }
 });
