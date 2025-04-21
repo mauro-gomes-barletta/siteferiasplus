@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - FériasPlus</title>
+    <title>Cadastro - FériasPlus</title>
     <link rel="stylesheet" href="./styles/main.css">
 </head>
 <body>
@@ -17,29 +17,28 @@
         </nav>
     </header>
     <main>
-        <h2>Login</h2>
-        <form action="#" method="POST">
+        <h2>Cadastro</h2>
+        <form id="registerForm">
             <label for="email">E-mail:</label>
             <input type="email" id="email" name="email" placeholder="Digite seu e-mail" required>
             
             <label for="password">Senha:</label>
             <input type="password" id="password" name="password" placeholder="Digite sua senha" required>
             
-            <button type="submit">Entrar</button>
+            <button type="submit">Cadastrar</button>
         </form>
-        <p>Não tem uma conta? <a href="#">Cadastre-se</a></p>
     </main>
     <footer>
         <p>&copy; 2025 FériasPlus. Todos os direitos reservados.</p>
     </footer>
     <script>
-        document.querySelector('form').addEventListener('submit', function (e) {
+        document.getElementById('registerForm').addEventListener('submit', function (e) {
             e.preventDefault();
 
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            fetch('https://feriasplus.herokuapp.com/login', {
+            fetch('https://feriasplus.herokuapp.com/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -47,16 +46,7 @@
                 body: JSON.stringify({ email, password })
             })
             .then(response => response.json())
-            .then(data => {
-                if (response.status === 404) {
-                    alert(data.message);
-                    window.location.href = 'cadastro.html';
-                } else if (response.status === 200) {
-                    alert(data.message);
-                } else {
-                    alert(data.message);
-                }
-            })
+            .then(data => alert(data.message))
             .catch(err => console.error('Erro:', err));
         });
     </script>

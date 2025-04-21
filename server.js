@@ -1,27 +1,65 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
+const { Pool } = require('pg'); // PostgreSQL client
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(bodyParser.json());
-
-// Servir arquivos estáticos da pasta raiz (onde está o index.html)
 app.use(express.static(path.join(__dirname)));
+
+// Configuração do banco de dados PostgreSQL
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
 
 // Rota para a página inicial
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Rota para salvar dados de login
-app.post('/login', (req, res) => {
+// Rota para verificar login
+app.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
-    // Simulação de resposta (substitua por lógica de banco de dados)
-    res.status(201).json({ message: 'Usuário registrado com sucesso!' });
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+
+        if (result.rows.length > 0) {
+            const user = result.rows[0];
+            if (user.password === password) {
+                res.status(200).json({ message: 'Login bem-sucedido!' });
+            } else {
+                res.status(401).json({ message: 'Senha incorreta!' });
+            }
+        } else {
+            res.status(404).json({ message: 'Usuário não encontrado. Redirecionando para cadastro...' });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao verificar o login' });
+    }
+});
+
+// Rota para cadastrar novo usuário
+app.post('/register', async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        const result = await pool.query(
+            'INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *',
+            [email, password]
+        );
+        res.status(201).json({ message: 'Usuário cadastrado com sucesso!', user: result.rows[0] });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao cadastrar o usuário' });
+    }
 });
 
 // Inicia o servidor
