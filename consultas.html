@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consultas - FériasPlus</title>
     <link rel="stylesheet" href="./styles/main.css">
+    <link rel="stylesheet" href="./styles/consultas.css">
 </head>
 <body>
     <header>
@@ -36,6 +37,7 @@
 
             <button type="submit">Consultar</button>
         </form>
+
         <div id="result"></div>
     </main>
     <footer>
@@ -76,9 +78,55 @@
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById('result').innerHTML = `<h3>Resultado:</h3><p>${data.result}</p>`;
+                document.getElementById('result').innerHTML = `
+                    <h3>Prompt Enviado:</h3>
+                    <pre>${data.prompt}</pre>
+                    <h3>Resultado:</h3>
+                    <p>${data.result}</p>
+                `;
             })
             .catch(err => console.error('Erro:', err));
+        });
+
+        // Backend logic
+        const express = require('express');
+        const app = express();
+        const openai = require('openai');
+
+        app.use(express.json());
+
+        app.post('/consultas', async (req, res) => {
+            const { startDate, daysAvailable, periods, bankHours, location } = req.body;
+
+            try {
+                // Gera o prompt para a IA
+                const prompt = `
+                    Baseado nas informações:
+                    - Data de início: ${startDate}
+                    - Dias disponíveis: ${daysAvailable}
+                    - Períodos: ${periods}
+                    - Dias de banco de horas: ${bankHours}
+                    - Localização: ${location}
+                    Sugira o melhor planejamento de férias.
+                `;
+
+                console.log('Prompt gerado:', prompt); // Log para depuração
+
+                // Chama a API da OpenAI
+                const aiResponse = await openai.chat.completions.create({
+                    model: "gpt-3.5-turbo",
+                    messages: [{ role: "user", content: prompt }],
+                    max_tokens: 150,
+                });
+
+                const aiResult = aiResponse.choices[0].message.content.trim();
+
+                // Retorna o prompt e o resultado para o frontend
+                res.status(200).json({ prompt, result: aiResult });
+            } catch (err) {
+                console.error('Erro ao processar a consulta:', err);
+                res.status(500).json({ error: 'Erro ao processar a consulta' });
+            }
         });
     </script>
 </body>
