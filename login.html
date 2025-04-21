@@ -18,7 +18,7 @@
     </header>
     <main>
         <h2>Login</h2>
-        <form action="#" method="POST">
+        <form>
             <label for="email">E-mail:</label>
             <input type="email" id="email" name="email" placeholder="Digite seu e-mail" required>
             
@@ -27,7 +27,7 @@
             
             <button type="submit">Entrar</button>
         </form>
-        <p>Não tem uma conta? <a href="cadastro.html" id="registerLink">Cadastre-se</a></p>
+        <p>Não tem uma conta? <a href="cadastro.html" id="registerLink">Cadastre-se aqui</a></p>
     </main>
     <footer>
         <p>&copy; 2025 FériasPlus. Todos os direitos reservados.</p>
@@ -39,7 +39,6 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            // Envia os dados para o backend para verificar o login
             fetch('https://feriasplus.herokuapp.com/login', {
                 method: 'POST',
                 headers: {
@@ -47,18 +46,23 @@
                 },
                 body: JSON.stringify({ email, password })
             })
-            .then(response => response.json())
-            .then(data => {
+            .then(response => {
                 if (response.status === 404) {
                     // Usuário não encontrado, redireciona para a tela de cadastro
-                    alert(data.message);
-                    window.location.href = 'cadastro.html';
+                    return response.json().then(data => {
+                        alert(data.message);
+                        window.location.href = 'cadastro.html';
+                    });
                 } else if (response.status === 200) {
                     // Login bem-sucedido
-                    alert(data.message);
+                    return response.json().then(data => {
+                        alert(data.message);
+                    });
                 } else {
                     // Outros erros (ex.: senha incorreta)
-                    alert(data.message);
+                    return response.json().then(data => {
+                        alert(data.message);
+                    });
                 }
             })
             .catch(err => console.error('Erro:', err));

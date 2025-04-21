@@ -45,8 +45,20 @@
                 },
                 body: JSON.stringify({ email, password })
             })
-            .then(response => response.json())
-            .then(data => alert(data.message))
+            .then(response => {
+                if (response.status === 201) {
+                    // Cadastro bem-sucedido
+                    return response.json().then(data => {
+                        alert(data.message);
+                        window.location.href = 'login.html';
+                    });
+                } else {
+                    // Erro no cadastro (ex.: usuário já existe)
+                    return response.json().then(data => {
+                        alert(data.message);
+                    });
+                }
+            })
             .catch(err => console.error('Erro:', err));
         });
     </script>

@@ -51,6 +51,13 @@ app.post('/register', async (req, res) => {
     const { email, password } = req.body;
 
     try {
+        // Verifica se o usuário já existe
+        const checkUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (checkUser.rows.length > 0) {
+            return res.status(400).json({ message: 'Usuário já cadastrado!' });
+        }
+
+        // Insere o novo usuário
         const result = await pool.query(
             'INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *',
             [email, password]
