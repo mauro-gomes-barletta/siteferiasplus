@@ -18,6 +18,16 @@ const pool = new Pool({
     }
 });
 
+// Testa a conexão com o banco de dados
+pool.connect((err, client, release) => {
+    if (err) {
+        console.error('Erro ao conectar ao banco de dados:', err.stack);
+    } else {
+        console.log('Conexão com o banco de dados estabelecida com sucesso!');
+        release();
+    }
+});
+
 // Rota para a página inicial
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));

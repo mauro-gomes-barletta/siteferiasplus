@@ -39,7 +39,9 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            fetch('https://feriasplus.herokuapp.com/login', {
+            console.log('Enviando dados para login:', { email, password });
+
+            fetch('/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -47,19 +49,17 @@
                 body: JSON.stringify({ email, password })
             })
             .then(response => {
+                console.log('Resposta do servidor:', response);
                 if (response.status === 404) {
-                    // Usuário não encontrado, redireciona para a tela de cadastro
                     return response.json().then(data => {
                         alert(data.message);
                         window.location.href = 'cadastro.html';
                     });
                 } else if (response.status === 200) {
-                    // Login bem-sucedido
                     return response.json().then(data => {
                         alert(data.message);
                     });
                 } else {
-                    // Outros erros (ex.: senha incorreta)
                     return response.json().then(data => {
                         alert(data.message);
                     });
