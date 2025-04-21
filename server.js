@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
@@ -30,9 +32,11 @@ pool.connect((err, client, release) => {
 });
 
 // Configuração da API OpenAI
-const openai = new OpenAIApi(new Configuration({
-    apiKey: process.env.OPENAI_API_KEY
-}));
+const OpenAI = require("openai");
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 // Rota para a página inicial
 app.get('/', (req, res) => {
