@@ -39,6 +39,10 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
+            const submitButton = document.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Entrando...';
+
             console.log('Enviando dados para login:', { email, password });
 
             fetch('/login', {
@@ -53,11 +57,12 @@
                 if (response.status === 404) {
                     return response.json().then(data => {
                         alert(data.message);
-                        window.location.href = 'cadastro.html';
+                        window.location.href = 'cadastro.html'; // Redireciona para cadastro
                     });
                 } else if (response.status === 200) {
                     return response.json().then(data => {
                         alert(data.message);
+                        window.location.href = 'consultas.html'; // Redireciona para consultas
                     });
                 } else {
                     return response.json().then(data => {
@@ -65,7 +70,13 @@
                     });
                 }
             })
-            .catch(err => console.error('Erro:', err));
+            .catch(err => {
+                console.error('Erro:', err);
+            })
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Entrar';
+            });
         });
     </script>
 </body>
