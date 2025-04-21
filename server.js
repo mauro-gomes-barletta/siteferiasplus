@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
 const { Pool } = require('pg'); // PostgreSQL client
+const { Configuration, OpenAIApi } = require('openai'); // OpenAI client
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -27,6 +28,11 @@ pool.connect((err, client, release) => {
         release();
     }
 });
+
+// Configuração da API OpenAI
+const openai = new OpenAIApi(new Configuration({
+    apiKey: process.env.OPENAI_API_KEY
+}));
 
 // Rota para a página inicial
 app.get('/', (req, res) => {
@@ -76,6 +82,44 @@ app.post('/register', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Erro ao cadastrar o usuário' });
+    }
+});
+
+// Rota para processar consultas
+app.post('/consultas', async (req, res) => {
+    const { startDate, daysAvailable, periods, bankHours, location } = req.body;
+
+    try {
+        // Salva a consulta no banco de dados
+        const result = await pool.query(
+            'INSERT INTO consultas (start_date, days_available, periods, bank_hours, location, user_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [startDate, daysAvailable, periods, bankHours, location, req.user.id] // req.user.id deve ser configurado após autenticação
+        );
+
+        // Gera o prompt para a IA
+        const prompt = `
+            Baseado nas informações:
+            - Data de início: ${startDate}
+            - Dias disponíveis: ${daysAvailable}
+            - Períodos: ${periods}
+            - Dias de banco de horas: ${bankHours}
+            - Localização: ${location}
+            Sugira o melhor planejamento de férias.
+        `;
+
+        // Chama a API da OpenAI
+        const aiResponse = await openai.createCompletion({
+            model: 'text-davinci-003',
+            prompt: prompt,
+            max_tokens: 150
+        });
+
+        const aiResult = aiResponse.data.choices[0].text.trim();
+
+        res.status(200).json({ result: aiResult });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao processar a consulta' });
     }
 });
 
