@@ -114,6 +114,7 @@ app.post('/consultas', async (req, res) => {
             3. Sugestões de destinos: [lista de destinos sugeridos] com atividades recomendadas.    
             Com poucas palavras para economizar tokens, mas com todas as informações necessárias tenho max_tokens: 500 por mensagens.
             Não me mande informações desnecessárias, apenas o que foi pedido.
+            Mas tenho algumas regras os dias de férias tem ser no mínimo 5 dias por período, não começar no final de semana e não terminar no final de semana. 
         `;
 
         // Chama a API da OpenAI

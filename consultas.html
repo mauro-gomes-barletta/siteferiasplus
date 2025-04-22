@@ -75,9 +75,12 @@
                         const { jsPDF } = window.jspdf;
                         const doc = new jsPDF();
 
-                        // Adiciona o conteúdo ao PDF
+                        // Adiciona o título ao PDF
                         doc.text("Resultado da Consulta", 10, 10);
-                        doc.text(data.result, 10, 20);
+
+                        // Divide o texto em linhas que caibam na largura da página
+                        const textLines = doc.splitTextToSize(data.result, 180); // 180 define a largura do texto
+                        doc.text(textLines, 10, 20); // Adiciona o texto dividido ao PDF
 
                         // Salva o PDF
                         doc.save("resultado-consulta.pdf");
