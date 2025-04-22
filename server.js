@@ -101,6 +101,8 @@ app.post('/consultas', async (req, res) => {
             Eu preciso de uma planilha com um planejamento de férias,
             aproveitando ao máximo os dias disponíveis e as emendas de feriado que pode ter seja
             nacional, municipal ou federal, pois trabalho em ${location}.
+            Então as melhores situações são que o feriado venha antes ou depois do inicio das férias. 
+            Tirar os períodos de ferias nos meios de feriados é ruim e não tras benefícios.
             Eu tenho ${daysAvailable} dias disponíveis para tirar férias e ${bankHours} dias de banco de horas.
             Gostaria de fracionar as férias em ${periods} períodos, faça o melhor planejamento possível, mesmo que não consiga enmenda em todos os feriados.
             O período de férias começa em ${startDate} e eu gostaria de saber quais são os melhores períodos para tirar férias.
