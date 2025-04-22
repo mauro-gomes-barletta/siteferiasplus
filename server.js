@@ -96,13 +96,18 @@ app.post('/consultas', async (req, res) => {
     try {
         // Gera o prompt para a IA
         const prompt = `
-            Baseado nas informações:
-            - Data de início: ${startDate}
-            - Dias disponíveis: ${daysAvailable}
-            - Períodos: ${periods}
-            - Dias de banco de horas: ${bankHours}
-            - Localização: ${location}
-            Sugira o melhor planejamento de férias.
+            Eu sou um assistente de planejamento de férias e preciso ajudar um usuário a planejar suas férias.
+            O usuário me forneceu as seguintes informações:
+            Eu preciso de uma planilha com um planejamento de férias,
+            aproveitando ao máximo os dias disponíveis e as emendas de feriado que pode ter seja
+            nacional, municipal ou federal, pois trabalho em ${location}.
+            Eu tenho ${daysAvailable} dias disponíveis para tirar férias e ${bankHours} dias de banco de horas.
+            Gostaria de fracionar as férias em ${periods} períodos, faça o melhor planejamento possível, mesmo que não consiga enmenda em todos os feriados.
+            O período de férias começa em ${startDate} e eu gostaria de saber quais são os melhores períodos para tirar férias.
+            Além disso, gostaria de sugestões de destinos e atividades para aproveitar ao máximo as férias.
+            Considere também os feriados nacionais e municipais que podem influenciar no planejamento.
+            Por favor, forneça uma tabela com as datas, destinos e atividades sugeridas.
+            Inclua também informações sobre o clima e a melhor época para visitar os destinos sugeridos. 
         `;
 
         // Chama a API da OpenAI

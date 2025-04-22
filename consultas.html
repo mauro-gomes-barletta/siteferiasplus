@@ -80,8 +80,6 @@
             .then(data => {
                 console.log('Resposta do backend:', data); // Log para depuração
                 document.getElementById('result').innerHTML = `
-                    <h3>Prompt Enviado:</h3>
-                    <pre>${data.prompt}</pre>
                     <h3>Resultado:</h3>
                     <p>${data.result}</p>
                 `;
@@ -91,4 +89,3 @@
     </script>
 </body>
 </html>
-``` 
