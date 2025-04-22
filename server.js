@@ -108,15 +108,19 @@ app.post('/consultas', async (req, res) => {
             O período de férias começa em ${startDate} e eu gostaria de saber quais são os melhores períodos para tirar férias.
             Além disso, gostaria de sugestões de destinos e atividades para aproveitar ao máximo as férias.
             Considere também os feriados nacionais e municipais que podem influenciar no planejamento.
-            Por favor, forneça uma tabela com as datas, destinos e atividades sugeridas.
-            Inclua também informações sobre o clima e a melhor época para visitar os destinos sugeridos. 
+            Por favor me mande de forma resumida da segunte forma:
+            1. Período de férias: [data de início] a [data de término], com [número de dias] dias de férias.
+            2. Feriados: [lista de feriados que caem nesse período].
+            3. Sugestões de destinos: [lista de destinos sugeridos] com atividades recomendadas.    
+            Com poucas palavras para economizar tokens, mas com todas as informações necessárias tenho max_tokens: 500 por mensagens.
+            Não me mande informações desnecessárias, apenas o que foi pedido.
         `;
 
         // Chama a API da OpenAI
         const aiResponse = await openai.chat.completions.create({
             model: "gpt-4.1",
             messages: [{ role: "user", content: prompt }],
-            max_tokens: 150,
+            max_tokens: 500,
         });
 
         const aiResult = aiResponse.choices[0].message.content.trim();
