@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const { Pool } = require('pg'); // PostgreSQL client
 const { Configuration, OpenAIApi } = require('openai'); // OpenAI client
+const bcrypt = require('bcrypt'); // Bcrypt for password hashing
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -74,24 +75,22 @@ app.post('/login', async (req, res) => {
 
 // Rota para cadastrar novo usuário
 app.post('/register', async (req, res) => {
-    const { email, password } = req.body;
+    const { name, email, password_hash } = req.body;
 
     try {
-        // Verifica se o usuário já existe
-        const checkUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-        if (checkUser.rows.length > 0) {
-            return res.status(400).json({ message: 'Usuário já cadastrado!' });
-        }
+        // Gerar o hash da senha
+        const hashedPassword = await bcrypt.hash(password_hash, 10);
 
-        // Insere o novo usuário
-        const result = await pool.query(
-            'INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *',
-            [email, password]
+        // Inserir no banco de dados
+        await pool.query(
+            'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)',
+            [name, email, hashedPassword]
         );
-        res.status(201).json({ message: 'Usuário cadastrado com sucesso!', user: result.rows[0] });
+
+        res.status(201).json({ message: 'Usuário cadastrado com sucesso!' });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Erro ao cadastrar o usuário' });
+        console.error('Erro ao cadastrar usuário:', err);
+        res.status(500).json({ message: 'Erro ao cadastrar usuário.' });
     }
 });
 
