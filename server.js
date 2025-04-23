@@ -5,7 +5,6 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const { Pool } = require('pg'); // PostgreSQL client
 const { Configuration, OpenAIApi } = require('openai'); // OpenAI client
-const bcrypt = require('bcrypt'); // Bcrypt for password hashing
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -59,7 +58,7 @@ app.post('/login', async (req, res) => {
 
         if (result.rows.length > 0) {
             const user = result.rows[0];
-            if (user.password === password) {
+            if (user.password_hash === password) { // Comparação direta
                 res.status(200).json({ message: 'Login bem-sucedido!' });
             } else {
                 res.status(401).json({ message: 'Senha incorreta!' });
@@ -78,13 +77,10 @@ app.post('/register', async (req, res) => {
     const { name, email, password_hash } = req.body;
 
     try {
-        // Gerar o hash da senha
-        const hashedPassword = await bcrypt.hash(password_hash, 10);
-
-        // Inserir no banco de dados
+        // Inserir no banco de dados sem criptografia
         await pool.query(
             'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)',
-            [name, email, hashedPassword]
+            [name, email, password_hash]
         );
 
         res.status(201).json({ message: 'Usuário cadastrado com sucesso!' });
