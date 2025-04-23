@@ -92,9 +92,14 @@ app.post('/register', async (req, res) => {
 
 // Rota para processar consultas
 app.post('/consultas', async (req, res) => {
-    const { startDate, daysAvailable, periods, bankHours, location } = req.body;
+    const { startDate, daysAvailable, periods, bankHours, location, destinations } = req.body;
 
     try {
+        // Verifica se 'destinations' foi enviado e converte para uma string legível
+        const destinationsList = destinations && destinations.length > 0 
+            ? destinations.join(', ') 
+            : 'Nenhum destino preferido selecionado';
+
         // Gera o prompt para a IA
         const prompt = `
             Eu tenho ${daysAvailable} dias de férias  que posso fracionar em ${periods} períodos, alem disto tenho ${bankHours} dias de banco de horas
