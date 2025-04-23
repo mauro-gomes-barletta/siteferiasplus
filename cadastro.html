@@ -19,6 +19,9 @@
     <main>
         <h2>Cadastro</h2>
         <form id="registerForm">
+            <label for="name">Nome:</label>
+            <input type="text" id="name" name="name" placeholder="Digite seu nome" required>
+            
             <label for="email">E-mail:</label>
             <input type="email" id="email" name="email" placeholder="Digite seu e-mail" required>
             
@@ -35,17 +38,18 @@
         document.getElementById('registerForm').addEventListener('submit', function (e) {
             e.preventDefault();
 
+            const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            console.log('Enviando dados para cadastro:', { email, password });
+            console.log('Enviando dados para cadastro:', { name, email, password_hash: password });
 
             fetch('/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ name, email, password_hash: password }) // Alterado para password_hash
             })
             .then(response => {
                 console.log('Resposta do servidor:', response);

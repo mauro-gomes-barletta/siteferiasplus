@@ -15,7 +15,7 @@ app.use(express.static(path.join(__dirname)));
 
 // Configuração do banco de dados PostgreSQL
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: process.env.AWS_DATABASE_URL,
     ssl: {
         rejectUnauthorized: false
     }
