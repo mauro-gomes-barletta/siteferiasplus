@@ -102,8 +102,10 @@ app.post('/consultas', async (req, res) => {
             para que estes dias fiquem até maiores, o início para usar estes dias é férias começa em ${startDate} e tenho 1 ano para tirar, 
             eum moro no Brasil, mais especificamente em ${location} então tenho que aproveitar os feriádos nacionais,
             municipais e federais. 
+            Meus destinos preferidos são: ${destinationsList}.
             Você pode me ajudar e ver a melhor data para eu tirar estes dias ?
             Lembre-se é sempre melhor começar os perídos de férias logo após o feriado, ou que o último dia seja um dias antes do feriádo, e o ideal é que eu tire o máximo de dias possíveis,
+            Também é importante que obedeção as regras de fracionamento, ou seja, não posso tirar férias em um período menor que 5 dias, e o máximo é 30 dias.
             Por favor me mande de forma resumida da segunte forma:
             1. Período de férias: [data de início] a [data de término], com [número de dias] dias de férias.
             2. Sugestões de destinos: [lista de destinos sugeridos] com atividades recomendadas.    
