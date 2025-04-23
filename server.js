@@ -14,10 +14,16 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname)));
 
 // Configuração do banco de dados PostgreSQL
+console.log('URL do banco de dados:', process.env.AWS_DATABASE_URL);
+
 const pool = new Pool({
-    connectionString: process.env.AWS_DATABASE_URL,
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
     ssl: {
-        rejectUnauthorized: false
+        rejectUnauthorized: false // Use isso se o banco exigir SSL
     }
 });
 
