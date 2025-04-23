@@ -97,25 +97,17 @@ app.post('/consultas', async (req, res) => {
     try {
         // Gera o prompt para a IA
         const prompt = `
-            Eu sou um assistente de planejamento de férias e preciso ajudar um usuário a planejar suas férias.
-            O usuário me forneceu as seguintes informações:
-            Eu preciso de uma planilha com um planejamento de férias,
-            aproveitando ao máximo os dias disponíveis e as emendas de feriado que pode ter seja
-            nacional, municipal ou federal, pois trabalho em ${location}.
-            Então as melhores situações são que o feriado venha antes ou depois do inicio das férias. 
-            Tirar os períodos de ferias nos meios de feriados é ruim e não tras benefícios.
-            Eu tenho ${daysAvailable} dias disponíveis para tirar férias e ${bankHours} dias de banco de horas.
-            Gostaria de fracionar as férias em ${periods} períodos, faça o melhor planejamento possível, mesmo que não consiga enmenda em todos os feriados.
-            O período de férias começa em ${startDate} e eu gostaria de saber quais são os melhores períodos para tirar férias.
-            Além disso, gostaria de sugestões de destinos e atividades para aproveitar ao máximo as férias.
-            Considere também os feriados nacionais e municipais que podem influenciar no planejamento.
+            Eu tenho ${daysAvailable} dias de férias  que posso fracionar em ${periods} períodos, alem disto tenho ${bankHours} dias de banco de horas
+            me ajuda e escolher  os inicio destas minhas férias, eu quero aproveitar algum feriado 
+            para que estes dias fiquem até maiores, o início para usar estes dias é férias começa em ${startDate} e tenho 1 ano para tirar, 
+            eum moro no Brasil, mais especificamente em ${location} então tenho que aproveitar os feriádos nacionais,
+            municipais e federais. 
+            Você pode me ajudar e ver a melhor data para eu tirar estes dias ?
             Por favor me mande de forma resumida da segunte forma:
             1. Período de férias: [data de início] a [data de término], com [número de dias] dias de férias.
-            2. Feriados: [lista de feriados que caem nesse período].
-            3. Sugestões de destinos: [lista de destinos sugeridos] com atividades recomendadas.    
+            2. Sugestões de destinos: [lista de destinos sugeridos] com atividades recomendadas.    
             Com poucas palavras para economizar tokens, mas com todas as informações necessárias tenho max_tokens: 500 por mensagens.
             Não me mande informações desnecessárias, apenas o que foi pedido.
-            Mas tenho algumas regras os dias de férias tem ser no mínimo 5 dias por período, não começar no final de semana e não terminar no final de semana. 
         `;
 
         // Chama a API da OpenAI
