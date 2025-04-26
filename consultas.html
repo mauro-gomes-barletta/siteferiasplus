@@ -33,8 +33,15 @@
             <label for="bankHours">Dias de banco de horas:</label>
             <input type="number" id="bankHours" name="bankHours" min="0" max="30" required>
 
-            <label for="location">Cidade e estado onde trabalha:</label>
-            <input type="text" id="location" name="location" placeholder="Ex.: São Paulo, SP" required>
+            <label for="city">Cidade onde trabalha:</label>
+            <select id="city" name="city" required>
+                <option value="">Selecione a cidade</option>
+            </select>
+
+            <label for="state">Estado onde trabalha:</label>
+            <select id="state" name="state" required>
+                <option value="">Selecione o estado</option>
+            </select>
 
             <label for="destinations">Escolha seus destinos preferidos:</label>
             <select id="destinations" name="destinations" multiple>
@@ -57,57 +64,94 @@
         <p>&copy; 2025 FériasPlus. Todos os direitos reservados.</p>
     </footer>
     <script>
-        document.getElementById('consultaForm').addEventListener('submit', function (e) {
-            e.preventDefault();
+        document.addEventListener('DOMContentLoaded', function () {
+            const citySelect = document.getElementById('city');
+            const stateSelect = document.getElementById('state');
+            const consultaForm = document.getElementById('consultaForm');
+            const resultDiv = document.getElementById('result');
 
-            const startDate = document.getElementById('startDate').value;
-            const daysAvailable = parseInt(document.getElementById('daysAvailable').value, 10);
-            const periods = parseInt(document.getElementById('periods').value, 10);
-            const bankHours = parseInt(document.getElementById('bankHours').value, 10);
-            const location = document.getElementById('location').value;
+            // Função para popular os selects de cidade e estado
+            function populateLocationSelects(citiesData) {
+                const states = {};
+                citiesData.forEach(item => {
+                    if (!states[item.state]) {
+                        states[item.state] = [];
+                    }
+                    states[item.state].push(item.city);
+                });
 
-            // Captura os destinos selecionados
-            const destinations = Array.from(document.getElementById('destinations').selectedOptions).map(option => option.value);
+                for (const state in states) {
+                    const stateOption = document.createElement('option');
+                    stateOption.value = state;
+                    stateOption.textContent = state;
+                    stateSelect.appendChild(stateOption);
+                }
 
-            fetch('/consultas', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ startDate, daysAvailable, periods, bankHours, location, destinations }),
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    // Exibe o resultado na tela
-                    document.getElementById('result').innerHTML = `
-                        <h3>Resultado:</h3>
-                        <p>${data.result}</p>
-                        <button id="downloadPdf">Baixar PDF</button>
-                    `;
+                // Popula as cidades quando um estado é selecionado
+                stateSelect.addEventListener('change', function() {
+                    citySelect.innerHTML = '<option value="">Selecione a cidade</option>';
+                    const selectedState = this.value;
+                    if (selectedState && states[selectedState]) {
+                        states[selectedState].forEach(city => {
+                            const cityOption = document.createElement('option');
+                            cityOption.value = city;
+                            cityOption.textContent = city;
+                            citySelect.appendChild(cityOption);
+                        });
+                    }
+                });
+            }
 
-                    // Adiciona funcionalidade para gerar o PDF
-                    document.getElementById('downloadPdf').addEventListener('click', function () {
-                        const { jsPDF } = window.jspdf;
-                        const doc = new jsPDF();
+            // Busca a lista de cidades e estados do backend
+            fetch('/cities')
+                .then(response => response.json())
+                .then(data => populateLocationSelects(data))
+                .catch(error => console.error('Erro ao buscar cidades:', error));
 
-                        // Adicione o logotipo (Base64 ou URL)
-                        const logoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABDgAAAQ4CAYAAADsEGyPAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAE02lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSfvu78nIGlkPSdXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQnPz4KPHg6eG1wbWV0YSB4bWxuczp4PSdhZG9iZTpuczptZXRhLyc+CjxyZGY6UkRGIHhtbG5zOnJkZj0naHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyc+CgogPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9JycKICB4bWxuczpBdHRyaWI9J2h0dHA6Ly9ucy5hdHRyaWJ1dGlvbi5jb20vYWRzLzEuMC8nPgogIDxBdHRyaWI6QWRzPgogICA8cmRmOlNlcT4KICAgIDxyZGY6bGkgcmRmOnBhcnNlVHlwZT0nUmVzb3VyY2UnPgogICAgIDxBdHRyaWI6Q3JlYXRlZD4yMDI1LTA0LTE4PC9BdHRyaWI6Q3JlYXRlZD4KICAgICA8QXR0cmliOkV4dElkPjExY2Q4NDc2LTlhMDYtNGUxMC04MDA4LTZjMzVmMjY2ODFjODwvQXR0cmliOkV4dElkPgogICAgIDxBdHRyaWI6RmJJZD41MjUyNjU5MTQxNzk1ODA8L0F0dHJpYjpGYklkPgogICAgIDxBdHRyaWI6VG91Y2hUeXBlPjI8L0F0dHJpYjpUb3VjaFR5cGU+CiAgICA8L3JkZjpsaT4KICAgPC9yZGY6U2VxPgogIDwvQXR0cmliOkFkcz4KIDwvcmRmOkRlc2NyaXB0aW9uPgoKIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PScnCiAgeG1sbnM6ZGM9J2h0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvJz4KICA8ZGM6dGl0bGU+CiAgIDxyZGY6QWx0PgogICAgPHJkZjpsaSB4bWw6bGFuZz0neC1kZWZhdWx0Jz5Gw4lSSUFTIC0gTG9nb19Gw6lyaWFzUGx1czwvcmRmOmxpPgogICA8L3JkZjpBbHQ+CiAgPC9kYzp0aXRsZT4KIDwvcmRmOkRlc2NyaXB0aW9uPgoKIDxyZGY6RGVz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"; // Substitua pelo Base64 do seu logotipo
-                        doc.addImage(logoBase64, "PNG", 10, 10, 50, 20); // (imagem, tipo, x, y, largura, altura)
+            consultaForm.addEventListener('submit', function (e) {
+                e.preventDefault();
 
-                        // Adiciona o título ao PDF
-                        doc.setFontSize(16);
-                        doc.text("Resultado da Consulta", 10, 40);
+                const startDate = document.getElementById('startDate').value;
+                const daysAvailable = parseInt(document.getElementById('daysAvailable').value, 10);
+                const periods = parseInt(document.getElementById('periods').value, 10);
+                const bankHours = parseInt(document.getElementById('bankHours').value, 10);
+                const city = document.getElementById('city').value;
+                const state = document.getElementById('state').value;
 
-                        // Divide o texto em linhas que caibam na largura da página
-                        const textLines = doc.splitTextToSize(data.result, 180); // 180 define a largura do texto
-                        doc.setFontSize(12);
-                        doc.text(textLines, 10, 50); // Adiciona o texto dividido ao PDF
+                // Captura os destinos selecionados
+                const destinations = Array.from(document.getElementById('destinations').selectedOptions).map(option => option.value);
 
-                        // Salva o PDF
-                        doc.save("resultado-consulta.pdf");
-                    });
+                fetch('/consultas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ startDate, daysAvailable, periods, bankHours, city, state, destinations }),
                 })
-                .catch(err => console.error('Erro:', err));
+                    .then((response) => response.json())
+                    .then((data) => {
+                        resultDiv.innerHTML = `
+                            <h3>Resultado:</h3>
+                            <p>${data.result}</p>
+                            <button id="downloadPdf">Baixar PDF</button>
+                        `;
+
+                        // Adiciona funcionalidade para gerar o PDF (manter como estava)
+                        document.getElementById('downloadPdf').addEventListener('click', function () {
+                            const { jsPDF } = window.jspdf;
+                            const doc = new jsPDF();
+                            const logoBase64 = "data:image/png;base64,..."; // Substitua pela sua logo
+                            doc.addImage(logoBase64, "PNG", 10, 10, 50, 20);
+                            doc.setFontSize(16);
+                            doc.text("Resultado da Consulta", 10, 40);
+                            const textLines = doc.splitTextToSize(data.result, 180);
+                            doc.setFontSize(12);
+                            doc.text(textLines, 10, 50);
+                            doc.save("resultado-consulta.pdf");
+                        });
+                    })
+                    .catch(err => console.error('Erro:', err));
+            });
         });
     </script>
 </body>

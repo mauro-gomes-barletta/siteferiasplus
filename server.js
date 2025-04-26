@@ -4,7 +4,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
 const { Pool } = require('pg'); // PostgreSQL client
-const { Configuration, OpenAIApi } = require('openai'); // OpenAI client
+const { OpenAI } = require('openai'); // OpenAI client
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -14,8 +14,6 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname)));
 
 // Configuração do banco de dados PostgreSQL
-console.log('URL do banco de dados:', process.env.AWS_DATABASE_URL);
-
 const pool = new Pool({
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
@@ -23,7 +21,7 @@ const pool = new Pool({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     ssl: {
-        rejectUnauthorized: false // Use isso se o banco exigir SSL
+        rejectUnauthorized: false
     }
 });
 
@@ -38,10 +36,8 @@ pool.connect((err, client, release) => {
 });
 
 // Configuração da API OpenAI
-const OpenAI = require("openai");
-
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.OPENAI_API_KEY,
 });
 
 // Rota para a página inicial
@@ -49,62 +45,60 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Rota para verificar login
+// Nova rota para obter a lista de cidades
+app.get('/cities', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT DISTINCT
+                CITY,
+                STATE
+            FROM public.cities
+            ORDER BY STATE, CITY
+        `);
+        res.status(200).json(result.rows);
+    } catch (err) {
+        console.error('Erro ao buscar cidades:', err);
+        res.status(500).json({ error: 'Erro ao buscar cidades' });
+    }
+});
+
+// Rota para verificar login (manter como estava)
 app.post('/login', async (req, res) => {
-    const { email, password } = req.body;
-
-    try {
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-
-        if (result.rows.length > 0) {
-            const user = result.rows[0];
-            if (user.password_hash === password) { // Comparação direta
-                res.status(200).json({ message: 'Login bem-sucedido!' });
-            } else {
-                res.status(401).json({ message: 'Senha incorreta!' });
-            }
-        } else {
-            res.status(404).json({ message: 'Usuário não encontrado. Redirecionando para cadastro...' });
-        }
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Erro ao verificar o login' });
-    }
+    // ... (seu código de login)
 });
 
-// Rota para cadastrar novo usuário
+// Rota para cadastrar novo usuário (manter como estava)
 app.post('/register', async (req, res) => {
-    const { name, email, password_hash } = req.body;
-
-    try {
-        // Inserir no banco de dados sem criptografia
-        await pool.query(
-            'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)',
-            [name, email, password_hash]
-        );
-
-        res.status(201).json({ message: 'Usuário cadastrado com sucesso!' });
-    } catch (err) {
-        console.error('Erro ao cadastrar usuário:', err);
-        res.status(500).json({ message: 'Erro ao cadastrar usuário.' });
-    }
+    // ... (seu código de registro)
 });
 
-// Rota para processar consultas
+// Rota para processar consultas (modificada)
 app.post('/consultas', async (req, res) => {
-    const { startDate, daysAvailable, periods, bankHours, location, destinations } = req.body;
+    const { startDate, daysAvailable, periods, bankHours, city, state, destinations } = req.body;
 
     try {
+        // Busca os feriados relevantes do banco de dados
+        const holidaysResult = await pool.query(`
+            SELECT holiday
+            FROM holidays
+            WHERE
+                (scope = 'Nacional') OR
+                (scope = 'Estadual' AND uf = $1) OR
+                (scope = 'Municipal' AND city = $2)
+        `, [state, city]);
+
+        const relevantHolidays = holidaysResult.rows.map(h => h.holiday).join(', ');
+
         // Verifica se 'destinations' foi enviado e converte para uma string legível
-        const destinationsList = destinations && destinations.length > 0 
-            ? destinations.join(', ') 
+        const destinationsList = destinations && destinations.length > 0
+            ? destinations.join(', ')
             : 'Nenhum destino preferido selecionado';
 
-        // Gera o prompt para a IA
+        // Gera o prompt para a IA, incluindo os feriados relevantes
         const prompt = `
-            Considerando a data de início para minhas férias como ${startDate}, com ${daysAvailable} dias de férias fracionáveis em até ${periods} períodos, e ${bankHours} dias de banco de horas disponíveis, analise o calendário de feriados nacionais, estaduais (de São Paulo) e municipais (de São Paulo) no período de um ano a partir de ${startDate}.
+            Considerando a data de início para minhas férias como ${startDate}, com ${daysAvailable} dias de férias fracionáveis em até ${periods} períodos, e ${bankHours} dias de banco de horas disponíveis, e levando em conta os seguintes feriados (nacionais, estaduais de ${state}, e municipais de ${city}): ${relevantHolidays}.
 
-Objetivo PRIMÁRIO: Encontrar os melhores períodos para tirar férias, de forma que CADA período de férias comece NO DIA SEGUINTE ao término de um feriado (nacional, estadual ou municipal) OU termine NO DIA ANTERIOR ao início de um feriado. O objetivo é MAXIMIZAR a duração total da folga (férias + feriados emendados).
+Objetivo PRIMÁRIO: Encontrar os melhores períodos para tirar férias, de forma que CADA período de férias comece NO DIA SEGUINTE ao término de um feriado OU termine NO DIA ANTERIOR ao início de um feriado. O objetivo é MAXIMIZAR a duração total da folga (férias + feriados emendados).
 
 Restrições:
 - Duração mínima de cada período de férias: 5 dias.
