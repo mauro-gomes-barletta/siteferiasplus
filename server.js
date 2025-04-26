@@ -45,7 +45,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Nova rota para obter a lista de cidades
+// Rota para obter a lista de cidades
 app.get('/cities', async (req, res) => {
     try {
         const result = await pool.query(`
@@ -62,6 +62,30 @@ app.get('/cities', async (req, res) => {
     }
 });
 
+// Nova rota para obter os próximos feriados relevantes
+app.get('/proximos-feriados', async (req, res) => {
+    const { startDate, uf } = req.query;
+    if (!startDate || !uf) {
+        return res.status(400).json({ error: 'Data de início e UF são obrigatórias.' });
+    }
+
+    try {
+        const result = await pool.query(`
+            SELECT holiday, date_start, date_end
+            FROM holidays
+            WHERE
+                (scope = 'Nacional' OR (scope = 'Estadual' AND uf = $1))
+                AND date_end >= $2::date
+            ORDER BY date_start
+            LIMIT 10 -- Limitar a um número razoável de próximos feriados
+        `, [uf, startDate]);
+        res.status(200).json(result.rows);
+    } catch (err) {
+        console.error('Erro ao buscar próximos feriados:', err);
+        res.status(500).json({ error: 'Erro ao buscar próximos feriados' });
+    }
+});
+
 // Rota para verificar login (manter como estava)
 app.post('/login', async (req, res) => {
     // ... (seu código de login)
@@ -74,31 +98,38 @@ app.post('/register', async (req, res) => {
 
 // Rota para processar consultas (modificada)
 app.post('/consultas', async (req, res) => {
-    const { startDate, daysAvailable, periods, bankHours, city, state, destinations } = req.body;
+    const { startDate, daysAvailable, periods, bankHours, city, state, destinations, feriadosSelecionados } = req.body;
 
     try {
-        // Busca os feriados relevantes do banco de dados
+        // Busca os feriados relevantes (nacionais e da localidade) para o período
         const holidaysResult = await pool.query(`
-            SELECT holiday
+            SELECT holiday, date_start, date_end
             FROM holidays
             WHERE
                 (scope = 'Nacional') OR
                 (scope = 'Estadual' AND uf = $1) OR
                 (scope = 'Municipal' AND city = $2)
+            ORDER BY date_start
         `, [state, city]);
 
-        const relevantHolidays = holidaysResult.rows.map(h => h.holiday).join(', ');
+        const relevantHolidays = holidaysResult.rows;
 
         // Verifica se 'destinations' foi enviado e converte para uma string legível
         const destinationsList = destinations && destinations.length > 0
             ? destinations.join(', ')
             : 'Nenhum destino preferido selecionado';
 
-        // Gera o prompt para a IA, incluindo os feriados relevantes
-        const prompt = `
-            Considerando a data de início para minhas férias como ${startDate}, com ${daysAvailable} dias de férias fracionáveis em até ${periods} períodos, e ${bankHours} dias de banco de horas disponíveis, e levando em conta os seguintes feriados (nacionais, estaduais de ${state}, e municipais de ${city}): ${relevantHolidays}.
+        const feriadosParaEmenda = feriadosSelecionados.length > 0
+            ? `O usuário gostaria de iniciar os períodos de férias no dia seguinte aos seguintes feriados: ${feriadosSelecionados.join(', ')}. Considere que se o feriado terminar em uma sexta, sábado ou domingo, as férias devem idealmente começar na segunda-feira seguinte.`
+            : 'O usuário não selecionou nenhum feriado específico para emendar.';
 
-Objetivo PRIMÁRIO: Encontrar os melhores períodos para tirar férias, de forma que CADA período de férias comece NO DIA SEGUINTE ao término de um feriado OU termine NO DIA ANTERIOR ao início de um feriado. O objetivo é MAXIMIZAR a duração total da folga (férias + feriados emendados).
+        // Gera o prompt para a IA, incluindo os feriados relevantes e a preferência de emenda
+        const prompt = `
+            Considerando a data de início para minhas férias como ${startDate}, com ${daysAvailable} dias de férias fracionáveis em até ${periods} períodos, e ${bankHours} dias de banco de horas disponíveis, e levando em conta os seguintes feriados (nacionais, estaduais de ${state}, e municipais de ${city}): ${relevantHolidays.map(h => `${h.holiday} (${h.date_start} - ${h.date_end})`).join(', ')}.
+
+${feriadosParaEmenda}
+
+Objetivo PRIMÁRIO: Encontrar os melhores períodos para tirar férias, de forma que CADA período de férias, sempre que possível e respeitando a escolha do usuário, comece NO DIA SEGUINTE ao término de um feriado (nacional, estadual ou municipal) OU termine NO DIA ANTERIOR ao início de um feriado. Se o término do feriado for em uma sexta, sábado ou domingo, o início ideal das férias é na segunda-feira seguinte. O objetivo é MAXIMIZAR a duração total da folga (férias + feriados emendados).
 
 Restrições:
 - Duração mínima de cada período de férias: 5 dias.
