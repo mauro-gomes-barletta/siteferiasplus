@@ -102,20 +102,24 @@ app.post('/consultas', async (req, res) => {
 
         // Gera o prompt para a IA
         const prompt = `
-            Eu tenho ${daysAvailable} dias de férias  que posso fracionar em ${periods} períodos, alem disto tenho ${bankHours} dias de banco de horas
-            me ajuda e escolher  os inicio destas minhas férias, eu quero aproveitar algum feriado 
-            para que estes dias fiquem até maiores, o início para usar estes dias é férias começa em ${startDate} e tenho 1 ano para tirar, 
-            eum moro no Brasil, mais especificamente em ${location} então tenho que aproveitar os feriádos nacionais,
-            municipais e federais. 
-            Meus destinos preferidos são: ${destinationsList}.
-            Você pode me ajudar e ver a melhor data para eu tirar estes dias ?
-            Lembre-se é sempre melhor começar os perídos de férias logo após o feriado, ou que o último dia seja um dias antes do feriádo, e o ideal é que eu tire o máximo de dias possíveis,
-            Também é importante que obedeção as regras de fracionamento, ou seja, não posso tirar férias em um período menor que 5 dias, e o máximo é 30 dias.
-            Por favor me mande de forma resumida da segunte forma:
-            1. Período de férias: [data de início] a [data de término], com [número de dias] dias de férias.
-            2. Sugestões de destinos: [lista de destinos sugeridos] com atividades recomendadas.    
-            Com poucas palavras para economizar tokens, mas com todas as informações necessárias tenho max_tokens: 500 por mensagens.
-            Não me mande informações desnecessárias, apenas o que foi pedido.
+            Considerando a data de início para minhas férias como ${startDate}, com ${daysAvailable} dias de férias fracionáveis em até ${periods} períodos, e ${bankHours} dias de banco de horas disponíveis, analise o calendário de feriados nacionais, estaduais (de ${location}) e municipais (de ${location}) no período de um ano a partir de ${startDate}.
+
+            Objetivo: Encontrar os melhores períodos para tirar férias, maximizando a duração total ao conectar os períodos de férias com os feriados. As férias devem idealmente começar no dia seguinte ao término de um feriado e/ou terminar um dia antes do início de um feriado.
+
+            Restrições:
+            - Duração mínima de cada período de férias: 5 dias.
+            - Duração máxima de cada período de férias: 30 dias.
+            - Respeitar o limite de ${periods} fracionamentos.
+
+            Destinos preferidos: ${destinationsList}.
+
+            Formato da resposta:
+            1. Período de férias 1: [data de início] a [data de término], [número de dias] dias.
+            2. Período de férias 2: [data de início] a [data de término], [número de dias] dias.
+            ... (até ${periods} períodos)
+            3. Sugestões de destinos e atividades (concisas e relevantes para os períodos de férias e preferências): [destino 1]: [atividade 1], [destino 2]: [atividade 2], ...
+
+            Mantenha a resposta concisa para otimizar o uso de tokens (máximo 500 tokens). Inclua apenas as informações solicitadas.
         `;
 
         // Chama a API da OpenAI
