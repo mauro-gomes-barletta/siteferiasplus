@@ -5,8 +5,6 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const { Pool } = require('pg'); // PostgreSQL client
 const { OpenAI } = require('openai'); // OpenAI client
-const bcrypt = require('bcrypt');
-const saltRounds = 10; // Número de rounds para o bcrypt
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -111,7 +109,7 @@ app.get('/proximos-feriados', async (req, res) => {
     }
 });
 
-// Rota para verificar login
+// Rota para verificar login (manter como estava originalmente)
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     const startTime = Date.now();
@@ -125,13 +123,10 @@ app.post('/login', async (req, res) => {
 
         if (result.rows.length > 0) {
             const user = result.rows[0];
-
             const passwordMatchStartTime = Date.now();
-            const match = await bcrypt.compare(password, user.password_hash);
-            const passwordMatchEndTime = Date.now();
-            console.log(`[${new Date().toISOString()}] Comparação de senha levou: ${passwordMatchEndTime - passwordMatchStartTime}ms`);
-
-            if (match) {
+            if (user.password_hash === password) {
+                const passwordMatchEndTime = Date.now();
+                console.log(`[${new Date().toISOString()}] Comparação de senha levou: ${passwordMatchEndTime - passwordMatchStartTime}ms`);
                 res.status(200).json({ message: 'Login bem-sucedido!' });
             } else {
                 console.log(`[${new Date().toISOString()}] Senha incorreta para o email: ${email}`);
@@ -150,20 +145,16 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// Rota para cadastrar novo usuário
+// Rota para cadastrar novo usuário (manter como estava originalmente)
 app.post('/register', async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password_hash } = req.body;
 
     try {
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
-
         await pool.query(
             'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)',
-            [name, email, hashedPassword]
+            [name, email, password_hash]
         );
-
         res.status(201).json({ message: 'Usuário cadastrado com sucesso!' });
-
     } catch (err) {
         console.error('Erro ao cadastrar usuário:', err);
         res.status(500).json({ message: 'Erro ao cadastrar usuário.' });
