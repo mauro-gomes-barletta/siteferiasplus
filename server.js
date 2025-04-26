@@ -5,6 +5,8 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const { Pool } = require('pg'); // PostgreSQL client
 const { OpenAI } = require('openai'); // OpenAI client
+const bcrypt = require('bcrypt');
+const saltRounds = 10; // Número de rounds para o bcrypt
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -109,14 +111,63 @@ app.get('/proximos-feriados', async (req, res) => {
     }
 });
 
-// Rota para verificar login (manter como estava)
+// Rota para verificar login
 app.post('/login', async (req, res) => {
-    // ... (seu código de login)
+    const { email, password } = req.body;
+    const startTime = Date.now();
+    console.log(`[${new Date().toISOString()}] Iniciando tentativa de login para o email: ${email}`);
+
+    try {
+        const dbStartTime = Date.now();
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const dbEndTime = Date.now();
+        console.log(`[${new Date().toISOString()}] Consulta ao banco de dados levou: ${dbEndTime - dbStartTime}ms`);
+
+        if (result.rows.length > 0) {
+            const user = result.rows[0];
+
+            const passwordMatchStartTime = Date.now();
+            const match = await bcrypt.compare(password, user.password_hash);
+            const passwordMatchEndTime = Date.now();
+            console.log(`[${new Date().toISOString()}] Comparação de senha levou: ${passwordMatchEndTime - passwordMatchStartTime}ms`);
+
+            if (match) {
+                res.status(200).json({ message: 'Login bem-sucedido!' });
+            } else {
+                console.log(`[${new Date().toISOString()}] Senha incorreta para o email: ${email}`);
+                res.status(401).json({ message: 'Senha incorreta!' });
+            }
+        } else {
+            console.log(`[${new Date().toISOString()}] Usuário não encontrado para o email: ${email}`);
+            res.status(404).json({ message: 'Usuário não encontrado. Redirecionando para cadastro...' });
+        }
+    } catch (err) {
+        console.error(`[${new Date().toISOString()}] Erro ao verificar o login:`, err);
+        res.status(500).json({ error: 'Erro ao verificar o login' });
+    } finally {
+        const endTime = Date.now();
+        console.log(`[${new Date().toISOString()}] Tempo total da requisição /login: ${endTime - startTime}ms`);
+    }
 });
 
-// Rota para cadastrar novo usuário (manter como estava)
+// Rota para cadastrar novo usuário
 app.post('/register', async (req, res) => {
-    // ... (seu código de registro)
+    const { name, email, password } = req.body;
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        await pool.query(
+            'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)',
+            [name, email, hashedPassword]
+        );
+
+        res.status(201).json({ message: 'Usuário cadastrado com sucesso!' });
+
+    } catch (err) {
+        console.error('Erro ao cadastrar usuário:', err);
+        res.status(500).json({ message: 'Erro ao cadastrar usuário.' });
+    }
 });
 
 // Rota para processar consultas (modificada para usar 'periodos')
