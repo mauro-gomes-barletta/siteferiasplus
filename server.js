@@ -102,24 +102,24 @@ app.post('/consultas', async (req, res) => {
 
         // Gera o prompt para a IA
         const prompt = `
-            Considerando a data de início para minhas férias como ${startDate}, com ${daysAvailable} dias de férias fracionáveis em até ${periods} períodos, e ${bankHours} dias de banco de horas disponíveis, analise o calendário de feriados nacionais, estaduais (de ${location}) e municipais (de ${location}) no período de um ano a partir de ${startDate}.
+            Considerando a data de início para minhas férias como ${startDate}, com ${daysAvailable} dias de férias fracionáveis em até ${periods} períodos, e ${bankHours} dias de banco de horas disponíveis, analise o calendário de feriados nacionais, estaduais (de São Paulo) e municipais (de São Paulo) no período de um ano a partir de ${startDate}.
 
-            Objetivo: Encontrar os melhores períodos para tirar férias, maximizando a duração total ao conectar os períodos de férias com os feriados. As férias devem idealmente começar no dia seguinte ao término de um feriado e/ou terminar um dia antes do início de um feriado.
+Objetivo PRIMÁRIO: Encontrar os melhores períodos para tirar férias, de forma que CADA período de férias comece NO DIA SEGUINTE ao término de um feriado (nacional, estadual ou municipal) OU termine NO DIA ANTERIOR ao início de um feriado. O objetivo é MAXIMIZAR a duração total da folga (férias + feriados emendados).
 
-            Restrições:
-            - Duração mínima de cada período de férias: 5 dias.
-            - Duração máxima de cada período de férias: 30 dias.
-            - Respeitar o limite de ${periods} fracionamentos.
+Restrições:
+- Duração mínima de cada período de férias: 5 dias.
+- Duração máxima de cada período de férias: 30 dias.
+- Respeitar o limite de ${periods} fracionamentos.
 
-            Destinos preferidos: ${destinationsList}.
+Destinos preferidos: ${destinationsList}.
 
-            Formato da resposta:
-            1. Período de férias 1: [data de início] a [data de término], [número de dias] dias.
-            2. Período de férias 2: [data de início] a [data de término], [número de dias] dias.
-            ... (até ${periods} períodos)
-            3. Sugestões de destinos e atividades (concisas e relevantes para os períodos de férias e preferências): [destino 1]: [atividade 1], [destino 2]: [atividade 2], ...
+Formato da resposta:
+1. Período de férias 1: Início em [data], término em [data], total de [número de dias] de férias (emendando o feriado de [nome do feriado]).
+2. Período de férias 2: Início em [data], término em [data], total de [número de dias] de férias (terminando antes do feriado de [nome do feriado]).
+... (até ${periods} períodos)
+3. Sugestões de destinos e atividades (concisas e relevantes para os períodos de férias e preferências): [destino 1]: [atividade 1], [destino 2]: [atividade 2], ...
 
-            Mantenha a resposta concisa para otimizar o uso de tokens (máximo 500 tokens). Inclua apenas as informações solicitadas.
+Mantenha a resposta concisa para otimizar o uso de tokens (máximo 500 tokens). Inclua apenas as informações solicitadas.
         `;
 
         // Chama a API da OpenAI
