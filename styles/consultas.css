@@ -1,47 +1,187 @@
+:root {
+    --primary-color: #<seu-azul-escuro>; /* Substitua pelo seu tom de azul exato */
+    --secondary-color: #<seu-laranja>; /* Substitua pelo seu tom de laranja exato */
+    --neutral-light: #f9f9f9;
+    --neutral-medium: #ddd;
+    --text-primary: #333;
+    --text-secondary: #fff;
+    --box-shadow-light: 0 2px 10px rgba(0, 0, 0, 0.1);
+    --box-shadow-medium: 0 1px 5px rgba(0, 0, 0, 0.2);
+    --border-radius: 8px;
+    --input-border-radius: 5px;
+    --transition-duration: 0.3s;
+    --font-family-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-family-code: 'Consolas', 'Monaco', 'monospace';
+}
+
+body {
+    font-family: var(--font-family-primary);
+    color: var(--text-primary);
+    background-color: var(--neutral-light);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+header {
+    background-color: var(--primary-color);
+    color: var(--text-secondary);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    height: 50px; /* Ajuste conforme necessário */
+}
+
+nav a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    margin-left: 20px;
+    transition: color var(--transition-duration) ease;
+}
+
+nav a:hover {
+    color: var(--secondary-color);
+    text-decoration: underline;
+}
+
+main {
+    padding: 20px;
+    flex-grow: 1;
+}
+
+h2 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
 form {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    max-width: 400px;
-    margin: 0 auto;
+    gap: 15px;
+    max-width: 450px;
+    margin: 30px auto;
+    padding: 20px;
+    border-radius: var(--border-radius);
+    background-color: white;
+    box-shadow: var(--box-shadow-light);
 }
 
 label {
-    font-weight: bold;
+    font-weight: 600;
+    color: var(--text-primary);
 }
 
-input, button {
-    padding: 10px;
+input[type="date"],
+input[type="number"],
+input[type="text"],
+select {
+    padding: 12px;
     font-size: 16px;
+    border-radius: var(--input-border-radius);
+    border: 1px solid var(--neutral-medium);
+    box-sizing: border-box;
+    transition: border-color var(--transition-duration) ease;
 }
 
-button {
-    background-color: #007BFF;
-    color: white;
+input:focus,
+select:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 5px rgba(var(--secondary-color-rgb), 0.5); /* Precisa do RGB do laranja */
+}
+
+select[multiple] {
+    padding: 8px;
+    /* Adapte o padding para selects múltiplos se necessário */
+    height: auto; /* Para mostrar várias opções */
+}
+
+option {
+    padding: 8px;
+}
+
+button[type="submit"] {
+    background-color: var(--secondary-color);
+    color: var(--text-secondary);
     border: none;
+    padding: 15px;
+    font-size: 18px;
+    border-radius: var(--input-border-radius);
     cursor: pointer;
+    transition: background-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
 }
 
-button:hover {
-    background-color: #0056b3;
+button[type="submit"]:hover {
+    background-color: #FF9933; /* Escureça o laranja no hover */
+    box-shadow: var(--box-shadow-medium);
 }
 
 #result {
-    margin-top: 20px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-    max-height: 300px; /* Define a altura máxima */
-    overflow-y: auto; /* Adiciona barra de rolagem vertical */
-    white-space: pre-wrap; /* Mantém quebras de linha */
-    font-family: Arial, sans-serif;
-    font-size: 14px;
+    margin-top: 30px;
+    padding: 15px;
+    border: 1px solid var(--neutral-medium);
+    border-radius: var(--border-radius);
+    background-color: white;
+    max-height: 350px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-family: var(--font-family-primary);
+    font-size: 15px;
+    line-height: 1.6;
+    box-shadow: var(--box-shadow-light);
+}
+
+#result h3 {
+    color: var(--primary-color);
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+#downloadPdf {
+    background-color: var(--primary-color);
+    color: var(--text-secondary);
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    border-radius: var(--input-border-radius);
+    cursor: pointer;
+    transition: background-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
+    margin-top: 10px;
+    display: inline-block;
+}
+
+#downloadPdf:hover {
+    background-color:#003366; /* Escureça o azul no hover */
+    box-shadow: var(--box-shadow-medium);
 }
 
 pre {
-    background-color: #f4f4f4;
-    padding: 10px;
-    border-radius: 5px;
+    background-color: #f8f8f8;
+    padding: 12px;
+    border-radius: var(--input-border-radius);
     overflow-x: auto;
+    font-family: var(--font-family-code);
+    font-size: 14px;
+    line-height: 1.4;
+    border: 1px solid var(--neutral-medium);
+}
+
+footer {
+    background-color: var(--primary-color);
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 15px;
+    margin-top: 30px;
+}
+
+footer p {
+    margin: 0;
+    font-size: 0.9em;
 }
