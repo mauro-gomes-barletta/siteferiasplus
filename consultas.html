@@ -83,6 +83,16 @@
                 return;
             }
 
+            startDateInput.addEventListener('change', function () {
+                const startDate = this.value;
+                console.log('Data de início selecionada:', startDate);
+                if (!startDate) {
+                    listaFeriadosDiv.innerHTML = '<p>Por favor, selecione uma data de início.</p>';
+                } else {
+                    listaFeriadosDiv.innerHTML = ''; // Limpa a mensagem de erro
+                }
+            });
+
             function populateLocationSelects(citiesData) {
                 const states = {};
                 let saoPauloCities = [];
@@ -115,7 +125,7 @@
                             citySelect.appendChild(cityOption);
                         });
                     }
-                    const startDate = startDateInput.value;
+                    const startDate = startDateInput.value; // Leia o valor do campo aqui
 
                     if (!startDate) {
                         listaFeriadosDiv.innerHTML = '<p>Por favor, selecione uma data de início.</p>';
