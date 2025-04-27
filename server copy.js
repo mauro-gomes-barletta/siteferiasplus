@@ -40,6 +40,17 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Função para formatar a data incluindo o dia da semana em português
+function formatDateWithDay(dateString) {
+    const date = new Date(dateString);
+    const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+    const formattedDate = date.toLocaleDateString('pt-BR', options);
+    // Extrair o dia da semana e formatar
+    const dayOfWeek = formattedDate.split(',')[0];
+    const datePart = formattedDate.split(',')[1].trim();
+    return `${datePart}(${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)})`;
+}
+
 // Rota para a página inicial
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
@@ -62,7 +73,7 @@ app.get('/cities', async (req, res) => {
     }
 });
 
-// Nova rota para obter os próximos feriados relevantes
+// Nova rota para obter os próximos feriados relevantes (modificada para formatar a data)
 app.get('/proximos-feriados', async (req, res) => {
     const { startDate, uf } = req.query;
     if (!startDate || !uf) {
@@ -79,7 +90,14 @@ app.get('/proximos-feriados', async (req, res) => {
             ORDER BY date_start
             LIMIT 10 -- Limitar a um número razoável de próximos feriados
         `, [uf, startDate]);
-        res.status(200).json(result.rows);
+
+        const formattedHolidays = result.rows.map(feriado => ({
+            holiday: feriado.holiday,
+            date_start: formatDateWithDay(feriado.date_start),
+            date_end: formatDateWithDay(feriado.date_end),
+        }));
+
+        res.status(200).json(formattedHolidays);
     } catch (err) {
         console.error('Erro ao buscar próximos feriados:', err);
         res.status(500).json({ error: 'Erro ao buscar próximos feriados' });
@@ -138,7 +156,7 @@ app.post('/register', async (req, res) => {
     }
 });
 
-// Rota para processar consultas (modificada)
+// Rota para processar consultas (a formatação da data aqui dependerá de como você quer usar no prompt da IA)
 app.post('/consultas', async (req, res) => {
     const { startDate, daysAvailable, periods, bankHours, city, state, destinations, feriadosSelecionados } = req.body;
 
@@ -154,9 +172,20 @@ app.post('/consultas', async (req, res) => {
             ORDER BY date_start
         `, [state, city]);
 
-        const relevantHolidays = holidaysResult.rows;
+        const relevantHolidays = holidaysResult.rows.map(h => ({
+            holiday: h.holiday,
+            date_start: h.date_start,
+            date_end: h.date_end,
+        }));
 
-        // Verifica se 'destinations' foi enviado e converte para uma string legível
+        const formatDateForPrompt = (dateString) => {
+            const date = new Date(dateString);
+            const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+            return date.toLocaleDateString('pt-BR', options);
+        };
+
+        const formattedRelevantHolidays = relevantHolidays.map(h => `${h.holiday} (${formatDateForPrompt(h.date_start)} - ${formatDateForPrompt(h.date_end)})`).join(', ');
+
         const destinationsList = destinations && destinations.length > 0
             ? destinations.join(', ')
             : 'Nenhum destino preferido selecionado';
@@ -167,7 +196,7 @@ app.post('/consultas', async (req, res) => {
 
         // Gera o prompt para a IA, incluindo os feriados relevantes e a preferência de emenda
         const prompt = `
-            Considerando a data de início para minhas férias como ${startDate}, com ${daysAvailable} dias de férias fracionáveis em até ${periods} períodos, e ${bankHours} dias de banco de horas disponíveis, e levando em conta os seguintes feriados (nacionais, estaduais de ${state}, e municipais de ${city}): ${relevantHolidays.map(h => `${h.holiday} (${h.date_start} - ${h.date_end})`).join(', ')}.
+            Considerando a data de início para minhas férias como ${formatDateForPrompt(startDate)}, com ${daysAvailable} dias de férias fracionáveis em até ${periods} períodos, e ${bankHours} dias de banco de horas disponíveis, e levando em conta os seguintes feriados (nacionais, estaduais de ${state}, e municipais de ${city}): ${formattedRelevantHolidays}.
 
 ${feriadosParaEmenda}
 
@@ -181,8 +210,8 @@ Restrições:
 Destinos preferidos: ${destinationsList}.
 
 Formato da resposta:
-1. Período de férias 1: Início em [data], término em [data], total de [número de dias] de férias (emendando o feriado de [nome do feriado]).
-2. Período de férias 2: Início em [data], término em [data], total de [número de dias] de férias (terminando antes do feriado de [nome do feriado]).
+1. Período de férias 1: Início em [data formatada], término em [data formatada], total de [número de dias] de férias (emendando o feriado de [nome do feriado]).
+2. Período de férias 2: Início em [data formatada], término em [data formatada], total de [número de dias] de férias (terminando antes do feriado de [nome do feriado]).
 ... (até ${periods} períodos)
 3. Sugestões de destinos e atividades (concisas e relevantes para os períodos de férias e preferências): [destino 1]: [atividade 1], [destino 2]: [atividade 2], ...
 
