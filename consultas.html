@@ -115,7 +115,14 @@
                             citySelect.appendChild(cityOption);
                         });
                     }
-                    buscarProximosFeriados(startDateInput.value, this.value);
+                    const startDate = startDateInput.value;
+
+                    if (!startDate) {
+                        listaFeriadosDiv.innerHTML = '<p>Por favor, selecione uma data de início.</p>';
+                        return;
+                    }
+
+                    buscarProximosFeriados(startDate, selectedState);
                 });
 
                 // Pré-selecionar SP e São Paulo
@@ -139,39 +146,42 @@
                 .catch(error => console.error('Erro ao buscar cidades:', error));
 
             function buscarProximosFeriados(startDate, uf) {
+                if (!startDate) {
+                    console.error('O campo "startDate" está vazio.');
+                    listaFeriadosDiv.innerHTML = '<p>Por favor, selecione uma data de início.</p>';
+                    return;
+                }
+
                 if (!uf) {
-                    listaFeriadosDiv.innerHTML = '<p>Selecione o estado.</p>';
+                    console.error('O campo "uf" está vazio.');
+                    listaFeriadosDiv.innerHTML = '<p>Por favor, selecione um estado.</p>';
                     return;
                 }
 
                 fetch(`/proximos-feriados?startDate=${startDate}&uf=${uf}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Erro na requisição: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(feriados => {
                         listaFeriadosDiv.innerHTML = '';
-                        checkboxesFeriados.length = 0; // Limpar array anterior
                         if (feriados && feriados.length > 0) {
                             feriados.forEach(feriado => {
                                 const div = document.createElement('div');
                                 div.classList.add('feriado-item');
-                                const checkbox = document.createElement('input');
-                                checkbox.type = 'checkbox';
-                                checkbox.id = `feriado-${feriado.holiday.replace(/\s/g, '')}`;
-                                checkbox.name = 'feriadosSelecionados';
-                                checkbox.value = feriado.date_end;
-                                const label = document.createElement('label');
-                                label.htmlFor = checkbox.id;
-                                label.textContent = `${feriado.holiday} (${feriado.date_start} - ${feriado.date_end})`;
-                                div.appendChild(checkbox);
-                                div.appendChild(label);
+                                div.textContent = `${feriado.holiday} (${feriado.date_start} - ${feriado.date_end})`;
                                 listaFeriadosDiv.appendChild(div);
-                                checkboxesFeriados.push(checkbox);
                             });
-                            limitarSelecaoFeriados(); // Limitar após carregar os feriados
                         } else {
                             listaFeriadosDiv.innerHTML = '<p>Não há próximos feriados relevantes encontrados.</p>';
                         }
                     })
-                    .catch(error => console.error('Erro ao buscar próximos feriados:', error));
+                    .catch(error => {
+                        console.error('Erro ao buscar próximos feriados:', error);
+                        listaFeriadosDiv.innerHTML = '<p>Erro ao buscar próximos feriados.</p>';
+                    });
             }
 
             function limitarSelecaoFeriados() {

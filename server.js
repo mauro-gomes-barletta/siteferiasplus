@@ -78,35 +78,15 @@ app.get('/cities', async (req, res) => {
     }
 });
 
-// Nova rota para obter os próximos feriados relevantes (modificada para formatar a data)
-app.get('/proximos-feriados', async (req, res) => {
+// Nova rota para obter os próximos feriados relevantes
+app.get('/proximos-feriados', (req, res) => {
     const { startDate, uf } = req.query;
+
     if (!startDate || !uf) {
         return res.status(400).json({ error: 'Data de início e UF são obrigatórias.' });
     }
 
-    try {
-        const result = await pool.query(`
-            SELECT holiday, date_start, date_end
-            FROM holidays
-            WHERE
-                (scope = 'Nacional' OR (scope = 'Estadual' AND uf = $1))
-                AND date_end >= $2::date
-            ORDER BY date_start
-            LIMIT 10 -- Limitar a um número razoável de próximos feriados
-        `, [uf, startDate]);
-
-        const formattedHolidays = result.rows.map(feriado => ({
-            holiday: feriado.holiday,
-            date_start: formatDateWithDay(feriado.date_start),
-            date_end: formatDateWithDay(feriado.date_end),
-        }));
-
-        res.status(200).json(formattedHolidays);
-    } catch (err) {
-        console.error('Erro ao buscar próximos feriados:', err);
-        res.status(500).json({ error: 'Erro ao buscar próximos feriados' });
-    }
+    // Lógica para buscar feriados...
 });
 
 // Rota para verificar login (manter como estava originalmente)
