@@ -1,3 +1,11 @@
+<select id="state">
+    <option value="">Selecione o estado</option>
+</select>
+
+<select id="city">
+    <option value="">Selecione a cidade</option>
+</select>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const citySelect = document.getElementById('city');
@@ -12,6 +20,12 @@
             document.getElementById('periodo3')
         ];
         const checkboxesFeriados = [];
+
+        // Verifica se os elementos necessários existem
+        if (!citySelect || !stateSelect || !consultaForm || !resultDiv || !listaFeriadosDiv || !startDateInput) {
+            console.error('Um ou mais elementos necessários não foram encontrados no DOM.');
+            return;
+        }
 
         function populateLocationSelects(citiesData) {
             const states = {};
@@ -34,7 +48,7 @@
                 stateSelect.appendChild(stateOption);
             }
 
-            stateSelect.addEventListener('change', function() {
+            stateSelect.addEventListener('change', function () {
                 citySelect.innerHTML = '<option value="">Selecione a cidade</option>';
                 const selectedState = this.value;
                 if (selectedState && states[selectedState]) {
@@ -118,7 +132,7 @@
             const periodos = periodoInputs.map(input => parseInt(input.value, 10));
             const bankHours = parseInt(document.getElementById('bankHours').value, 10);
             const city = document.getElementById('city').value;
-            const state = stateInput.value;
+            const state = stateSelect.value;
             const destinations = Array.from(document.getElementById('destinations').selectedOptions).map(option => option.value);
             const feriadosSelecionados = Array.from(document.querySelectorAll('input[name="feriadosSelecionados"]:checked'))
                 .map(checkbox => checkbox.value);
@@ -136,28 +150,28 @@
                 },
                 body: JSON.stringify({ startDate, periodos, bankHours, city, state, destinations, feriadosSelecionados }),
             })
-            .then((response) => response.json())
-            .then((data) => {
-                resultDiv.innerHTML = `
-                    <h3>Resultado:</h3>
-                    <p>${data.result}</p>
-                    <button id="downloadPdf">Baixar PDF</button>
-                `;
+                .then((response) => response.json())
+                .then((data) => {
+                    resultDiv.innerHTML = `
+                        <h3>Resultado:</h3>
+                        <p>${data.result}</p>
+                        <button id="downloadPdf">Baixar PDF</button>
+                    `;
 
-                document.getElementById('downloadPdf').addEventListener('click', function () {
-                    const { jsPDF } = window.jspdf;
-                    const doc = new jsPDF();
-                    const logoBase64 = "data:image/png;base64,..."; // Substitua pela sua logo
-                    doc.addImage(logoBase64, "PNG", 10, 10, 50, 20);
-                    doc.setFontSize(16);
-                    doc.text("Resultado da Consulta", 10, 40);
-                    const textLines = doc.splitTextToSize(data.result, 180);
-                    doc.setFontSize(12);
-                    doc.text(textLines, 10, 50);
-                    doc.save("resultado-consulta.pdf");
-                });
-            })
-            .catch(err => console.error('Erro:', err));
+                    document.getElementById('downloadPdf').addEventListener('click', function () {
+                        const { jsPDF } = window.jspdf;
+                        const doc = new jsPDF();
+                        const logoBase64 = "data:image/png;base64,..."; // Substitua pela sua logo
+                        doc.addImage(logoBase64, "PNG", 10, 10, 50, 20);
+                        doc.setFontSize(16);
+                        doc.text("Resultado da Consulta", 10, 40);
+                        const textLines = doc.splitTextToSize(data.result, 180);
+                        doc.setFontSize(12);
+                        doc.text(textLines, 10, 50);
+                        doc.save("resultado-consulta.pdf");
+                    });
+                })
+                .catch(err => console.error('Erro:', err));
         });
     });
 </script>
