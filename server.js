@@ -104,6 +104,7 @@ app.get('/proximos-feriados', async (req, res) => {
     }
 });
 
+
 // Rota para verificar login (manter como estava originalmente)
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
