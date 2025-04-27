@@ -9,7 +9,6 @@
 <body>
     <h1>Planejamento de Férias</h1>
 
-    <!-- Formulário de consulta -->
     <form id="consultaForm">
         <label for="state">Estado:</label>
         <select id="state">
@@ -51,10 +50,8 @@
         <button type="submit">Consultar</button>
     </form>
 
-    <!-- Div para exibir os feriados -->
     <div id="lista-feriados"></div>
 
-    <!-- Div para exibir o resultado -->
     <div id="result"></div>
 
     <script>
@@ -70,10 +67,18 @@
                 document.getElementById('periodo2'),
                 document.getElementById('periodo3')
             ];
+            const bankHoursInput = document.getElementById('bankHours');
             const checkboxesFeriados = [];
 
+            const destinationsElement = document.getElementById('destinations');
+            if (!destinationsElement) {
+                console.error('Elemento "destinations" não encontrado no DOM.');
+                return;
+            }
+            const destinations = Array.from(destinationsElement.selectedOptions).map(option => option.value);
+
             // Verifica se os elementos necessários existem
-            if (!citySelect || !stateSelect || !consultaForm || !resultDiv || !listaFeriadosDiv || !startDateInput) {
+            if (!citySelect || !stateSelect || !consultaForm || !resultDiv || !listaFeriadosDiv || !startDateInput || !bankHoursInput) {
                 console.error('Um ou mais elementos necessários não foram encontrados no DOM.');
                 return;
             }
@@ -176,17 +181,33 @@
                 });
             }
 
+            periodoInputs.forEach(input => {
+                input.addEventListener('change', limitarSelecaoFeriados);
+            });
+
             consultaForm.addEventListener('submit', function (e) {
                 e.preventDefault();
 
                 const startDate = startDateInput.value;
                 const periodos = periodoInputs.map(input => parseInt(input.value, 10));
-                const bankHours = parseInt(document.getElementById('bankHours').value, 10);
+                const bankHours = parseInt(bankHoursInput.value, 10);
                 const city = document.getElementById('city').value;
                 const state = stateSelect.value;
-                const destinations = Array.from(document.getElementById('destinations').selectedOptions).map(option => option.value);
-                const feriadosSelecionados = Array.from(document.querySelectorAll('input[name="feriadosSelecionados"]:checked'))
-                    .map(checkbox => checkbox.value);
+
+                // Verifica se o elemento "destinations" existe
+                const destinationsElement = document.getElementById('destinations');
+                if (!destinationsElement) {
+                    console.error('Elemento "destinations" não encontrado no DOM.');
+                    return;
+                }
+                const destinations = Array.from(destinationsElement.selectedOptions).map(option => option.value);
+
+                // Verifica se os checkboxes "feriadosSelecionados" existem
+                const checkboxes = document.querySelectorAll('input[name="feriadosSelecionados"]:checked');
+                if (checkboxes.length === 0) {
+                    console.warn('Nenhum checkbox "feriadosSelecionados" selecionado.');
+                }
+                const feriadosSelecionados = Array.from(checkboxes).map(checkbox => checkbox.value);
 
                 const totalDias = periodos.reduce((sum, days) => sum + days, 0);
                 if (totalDias > 30) {
@@ -201,15 +222,17 @@
                     },
                     body: JSON.stringify({ startDate, periodos, bankHours, city, state, destinations, feriadosSelecionados }),
                 })
-                    .then((response) => response.json())
-                    .then((data) => {
-                        resultDiv.innerHTML = `
-                            <h3>Resultado:</h3>
-                            <p>${data.result}</p>
-                            <button id="downloadPdf">Baixar PDF</button>
-                        `;
+                .then((response) => response.json())
+                .then((data) => {
+                    resultDiv.innerHTML = `
+                        <h3>Resultado:</h3>
+                        <p>${data.result}</p>
+                        <button id="downloadPdf">Baixar PDF</button>
+                    `;
 
-                        document.getElementById('downloadPdf').addEventListener('click', function () {
+                    const downloadPdfButton = document.getElementById('downloadPdf');
+                    if (downloadPdfButton) {
+                        downloadPdfButton.addEventListener('click', function () {
                             const { jsPDF } = window.jspdf;
                             const doc = new jsPDF();
                             const logoBase64 = "data:image/png;base64,..."; // Substitua pela sua logo
@@ -221,8 +244,9 @@
                             doc.text(textLines, 10, 50);
                             doc.save("resultado-consulta.pdf");
                         });
-                    })
-                    .catch(err => console.error('Erro:', err));
+                    }
+                })
+                .catch(err => console.error('Erro:', err));
             });
         });
     </script>

@@ -46,7 +46,7 @@ function formatDateWithDay(dateString) {
     const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
     const formattedDate = date.toLocaleDateString('pt-BR', options);
     const [dayOfWeek, datePart] = formattedDate.split(',');
-    return `${datePart.trim()}(${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)})`;
+    return `<span class="math-inline">\{datePart\.trim\(\)\}\(</span>{dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)})`;
 }
 
 // Função para formatar a data para o prompt da OpenAI
