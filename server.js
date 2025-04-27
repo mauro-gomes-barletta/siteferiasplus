@@ -45,15 +45,10 @@ function formatDateWithDay(dateString) {
     const date = new Date(dateString);
     const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
     const formattedDate = date.toLocaleDateString('pt-BR', options);
-    const [dayOfWeek, datePart] = formattedDate.split(',');
-    return `<span class="math-inline">\{datePart\.trim\(\)\}\(</span>{dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)})`;
-}
-
-// Função para formatar a data para o prompt da OpenAI
-function formatDateForPrompt(dateString) {
-    const date = new Date(dateString);
-    const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
-    return date.toLocaleDateString('pt-BR', options);
+    // Extrair o dia da semana e formatar
+    const dayOfWeek = formattedDate.split(',')[0];
+    const datePart = formattedDate.split(',')[1].trim();
+    return `${datePart}(${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)})`;
 }
 
 // Rota para a página inicial
@@ -78,15 +73,35 @@ app.get('/cities', async (req, res) => {
     }
 });
 
-// Nova rota para obter os próximos feriados relevantes
-app.get('/proximos-feriados', (req, res) => {
+// Nova rota para obter os próximos feriados relevantes (modificada para formatar a data)
+app.get('/proximos-feriados', async (req, res) => {
     const { startDate, uf } = req.query;
-
     if (!startDate || !uf) {
         return res.status(400).json({ error: 'Data de início e UF são obrigatórias.' });
     }
 
-    // Lógica para buscar feriados...
+    try {
+        const result = await pool.query(`
+            SELECT holiday, date_start, date_end
+            FROM holidays
+            WHERE
+                (scope = 'Nacional' OR (scope = 'Estadual' AND uf = $1))
+                AND date_end >= $2::date
+            ORDER BY date_start
+            LIMIT 10 -- Limitar a um número razoável de próximos feriados
+        `, [uf, startDate]);
+
+        const formattedHolidays = result.rows.map(feriado => ({
+            holiday: feriado.holiday,
+            date_start: formatDateWithDay(feriado.date_start),
+            date_end: formatDateWithDay(feriado.date_end),
+        }));
+
+        res.status(200).json(formattedHolidays);
+    } catch (err) {
+        console.error('Erro ao buscar próximos feriados:', err);
+        res.status(500).json({ error: 'Erro ao buscar próximos feriados' });
+    }
 });
 
 // Rota para verificar login (manter como estava originalmente)
@@ -141,10 +156,9 @@ app.post('/register', async (req, res) => {
     }
 });
 
-// Rota para processar consultas (modificada para usar 'periodos')
+// Rota para processar consultas (a formatação da data aqui dependerá de como você quer usar no prompt da IA)
 app.post('/consultas', async (req, res) => {
-    const { startDate, periodos, bankHours, city, state, destinations, feriadosSelecionados } = req.body;
-    const numPeriodos = periodos.filter(p => p > 0).length;
+    const { startDate, daysAvailable, periods, bankHours, city, state, destinations, feriadosSelecionados } = req.body;
 
     try {
         // Busca os feriados relevantes (nacionais e da localidade) para o período
@@ -164,6 +178,12 @@ app.post('/consultas', async (req, res) => {
             date_end: h.date_end,
         }));
 
+        const formatDateForPrompt = (dateString) => {
+            const date = new Date(dateString);
+            const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+            return date.toLocaleDateString('pt-BR', options);
+        };
+
         const formattedRelevantHolidays = relevantHolidays.map(h => `${h.holiday} (${formatDateForPrompt(h.date_start)} - ${formatDateForPrompt(h.date_end)})`).join(', ');
 
         const destinationsList = destinations && destinations.length > 0
@@ -171,31 +191,29 @@ app.post('/consultas', async (req, res) => {
             : 'Nenhum destino preferido selecionado';
 
         const feriadosParaEmenda = feriadosSelecionados.length > 0
-            ? `O usuário gostaria de iniciar até ${numPeriodos} períodos de férias no dia seguinte aos seguintes feriados: ${feriadosSelecionados.join(', ')}. Considere que se o feriado terminar em uma sexta, sábado ou domingo, o início ideal das férias é na segunda-feira seguinte.`
-            : `O usuário não selecionou nenhum feriado específico para emendar. Serão considerados até ${numPeriodos} períodos de férias.`;
-
-        const periodosInfo = periodos.map((dias, index) => `Período ${index + 1}: ${dias} dias`).filter(info => info.includes(':'));
+            ? `O usuário gostaria de iniciar os períodos de férias no dia seguinte aos seguintes feriados: ${feriadosSelecionados.join(', ')}. Considere que se o feriado terminar em uma sexta, sábado ou domingo, as férias devem idealmente começar na segunda-feira seguinte.`
+            : 'O usuário não selecionou nenhum feriado específico para emendar.';
 
         // Gera o prompt para a IA, incluindo os feriados relevantes e a preferência de emenda
         const prompt = `
-            Considerando a data de início para minhas férias como ${formatDateForPrompt(startDate)}, com os seguintes períodos de férias planejados: ${periodosInfo.join(', ')}, e ${bankHours} dias de banco de horas disponíveis, e levando em conta os seguintes feriados (nacionais, estaduais de ${state}, e municipais de ${city}): ${formattedRelevantHolidays}.
+            Considerando a data de início para minhas férias como ${formatDateForPrompt(startDate)}, com ${daysAvailable} dias de férias fracionáveis em até ${periods} períodos, e ${bankHours} dias de banco de horas disponíveis, e levando em conta os seguintes feriados (nacionais, estaduais de ${state}, e municipais de ${city}): ${formattedRelevantHolidays}.
 
 ${feriadosParaEmenda}
 
-Objetivo PRIMÁRIO: Encontrar os melhores períodos para tirar férias (até ${numPeriodos} períodos), de forma que CADA período de férias, sempre que possível e respeitando a escolha do usuário, comece NO DIA SEGUINTE ao término de um feriado (nacional, estadual ou municipal) OU termine NO DIA ANTERIOR ao início de um feriado. Se o término do feriado for em uma sexta, sábado ou domingo, o início ideal das férias é na segunda-feira seguinte. O objetivo é MAXIMIZAR a duração total da folga (férias + feriados emendados), respeitando os períodos de duração informados.
+Objetivo PRIMÁRIO: Encontrar os melhores períodos para tirar férias, de forma que CADA período de férias, sempre que possível e respeitando a escolha do usuário, comece NO DIA SEGUINTE ao término de um feriado (nacional, estadual ou municipal) OU termine NO DIA ANTERIOR ao início de um feriado. Se o término do feriado for em uma sexta, sábado ou domingo, o início ideal das férias é na segunda-feira seguinte. O objetivo é MAXIMIZAR a duração total da folga (férias + feriados emendados).
 
 Restrições:
-- Duração de cada período de férias deve corresponder aos dias informados (${periodosInfo.join(', ')}).
-- Duração máxima de cada período de férias: 30 dias (já respeitado na entrada).
-- Máximo de 3 períodos de férias (já implícito nos campos).
+- Duração mínima de cada período de férias: 5 dias.
+- Duração máxima de cada período de férias: 30 dias.
+- Respeitar o limite de ${periods} fracionamentos.
 
 Destinos preferidos: ${destinationsList}.
 
 Formato da resposta:
 1. Período de férias 1: Início em [data formatada], término em [data formatada], total de [número de dias] de férias (emendando o feriado de [nome do feriado]).
 2. Período de férias 2: Início em [data formatada], término em [data formatada], total de [número de dias] de férias (terminando antes do feriado de [nome do feriado]).
-3. Período de férias 3: Início em [data formatada], término em [data formatada], total de [número de dias] de férias (emendando o feriado de [nome do feriado]).
-4. Sugestões de destinos e atividades (concisas e relevantes para os períodos de férias e preferências): [destino 1]: [atividade 1], [destino 2]: [atividade 2], ...
+... (até ${periods} períodos)
+3. Sugestões de destinos e atividades (concisas e relevantes para os períodos de férias e preferências): [destino 1]: [atividade 1], [destino 2]: [atividade 2], ...
 
 Mantenha a resposta concisa para otimizar o uso de tokens (máximo 500 tokens). Inclua apenas as informações solicitadas.
         `;
