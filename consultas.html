@@ -89,7 +89,6 @@
             const resultDiv = document.getElementById('result');
             const listaFeriadosDiv = document.getElementById('lista-feriados');
             const startDateInput = document.getElementById('startDate');
-            const stateInput = document.getElementById('state');
 
             function populateLocationSelects(citiesData) {
                 const states = {};
@@ -129,8 +128,13 @@
                 .catch(error => console.error('Erro ao buscar cidades:', error));
 
             function buscarProximosFeriados(startDate, uf) {
-                if (!startDate || !uf) {
-                    listaFeriadosDiv.innerHTML = '<p>Selecione a data de início e o estado.</p>';
+                if (!startDate) {
+                    listaFeriadosDiv.innerHTML = '<p>Por favor, selecione uma data de início.</p>';
+                    return;
+                }
+
+                if (!uf) {
+                    listaFeriadosDiv.innerHTML = '<p>Por favor, selecione um estado.</p>';
                     return;
                 }
 
@@ -142,69 +146,70 @@
                             feriados.forEach(feriado => {
                                 const div = document.createElement('div');
                                 div.classList.add('feriado-item');
-                                const checkbox = document.createElement('input');
-                                checkbox.type = 'checkbox';
-                                checkbox.id = `feriado-${feriado.holiday.replace(/\s/g, '')}`;
-                                checkbox.name = 'feriadosSelecionados';
-                                checkbox.value = feriado.date_end; // Usar a data final do feriado como referência
-                                const label = document.createElement('label');
-                                label.htmlFor = checkbox.id;
-                                label.textContent = `${feriado.holiday} (${feriado.date_start} - ${feriado.date_end})`;
-                                div.appendChild(checkbox);
-                                div.appendChild(label);
+                                div.textContent = `${feriado.holiday} (${feriado.date_start} - ${feriado.date_end})`;
                                 listaFeriadosDiv.appendChild(div);
                             });
                         } else {
                             listaFeriadosDiv.innerHTML = '<p>Não há próximos feriados relevantes encontrados.</p>';
                         }
                     })
-                    .catch(error => console.error('Erro ao buscar próximos feriados:', error));
+                    .catch(error => {
+                        console.error('Erro ao buscar próximos feriados:', error);
+                        listaFeriadosDiv.innerHTML = '<p>Erro ao buscar próximos feriados.</p>';
+                    });
             }
 
-            consultaForm.addEventListener('submit', function (e) {
-                e.preventDefault();
+            // Adiciona os eventos
+            startDateInput.addEventListener('change', function () {
+                buscarProximosFeriados(startDateInput.value, stateSelect.value);
+            });
 
+            stateSelect.addEventListener('change', function () {
+                buscarProximosFeriados(startDateInput.value, stateSelect.value);
+            });
+
+            consultaForm.addEventListener('submit', function (e) {
+                e.preventDefault(); // Impede o comportamento padrão do formulário
+
+                // Obtém os valores dos campos
                 const startDate = startDateInput.value;
                 const daysAvailable = parseInt(document.getElementById('daysAvailable').value, 10);
                 const periods = parseInt(document.getElementById('periods').value, 10);
-                const bankHours = parseInt(document.getElementById('bankHours').value, 10);
-                const city = document.getElementById('city').value;
-                const state = stateInput.value;
+                const state = stateSelect.value;
+                const city = citySelect.value;
                 const destinations = Array.from(document.getElementById('destinations').selectedOptions).map(option => option.value);
 
-                // Captura os feriados selecionados para iniciar as férias
-                const feriadosSelecionados = Array.from(document.querySelectorAll('input[name="feriadosSelecionados"]:checked'))
-                    .map(checkbox => checkbox.value);
+                // Valida os campos obrigatórios
+                if (!startDate || !daysAvailable || !periods || !state || !city) {
+                    resultDiv.innerHTML = '<p>Por favor, preencha todos os campos obrigatórios.</p>';
+                    return;
+                }
 
+                // Envia a requisição para o backend
                 fetch('/consultas', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ startDate, daysAvailable, periods, bankHours, city, state, destinations, feriadosSelecionados }),
+                    body: JSON.stringify({ startDate, daysAvailable, periods, state, city, destinations }),
                 })
-                    .then((response) => response.json())
-                    .then((data) => {
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erro na resposta do servidor');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Exibe o resultado na tela
                         resultDiv.innerHTML = `
                             <h3>Resultado:</h3>
                             <p>${data.result}</p>
-                            <button id="downloadPdf">Baixar PDF</button>
                         `;
-
-                        document.getElementById('downloadPdf').addEventListener('click', function () {
-                            const { jsPDF } = window.jspdf;
-                            const doc = new jsPDF();
-                            const logoBase64 = "data:image/png;base64,..."; // Substitua pela sua logo
-                            doc.addImage(logoBase64, "PNG", 10, 10, 50, 20);
-                            doc.setFontSize(16);
-                            doc.text("Resultado da Consulta", 10, 40);
-                            const textLines = doc.splitTextToSize(data.result, 180);
-                            doc.setFontSize(12);
-                            doc.text(textLines, 10, 50);
-                            doc.save("resultado-consulta.pdf");
-                        });
                     })
-                    .catch(err => console.error('Erro:', err));
+                    .catch(err => {
+                        console.error('Erro ao processar a consulta:', err);
+                        resultDiv.innerHTML = '<p>Erro ao processar a consulta.</p>';
+                    });
             });
         });
     </script>
