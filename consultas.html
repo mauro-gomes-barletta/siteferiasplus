@@ -1,177 +1,230 @@
-<select id="state">
-    <option value="">Selecione o estado</option>
-</select>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Férias</title>
+    <link rel="stylesheet" href="styles/consultas.css">
+</head>
+<body>
+    <h1>Planejamento de Férias</h1>
 
-<select id="city">
-    <option value="">Selecione a cidade</option>
-</select>
+    <!-- Formulário de consulta -->
+    <form id="consultaForm">
+        <label for="state">Estado:</label>
+        <select id="state">
+            <option value="">Selecione o estado</option>
+        </select>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const citySelect = document.getElementById('city');
-        const stateSelect = document.getElementById('state');
-        const consultaForm = document.getElementById('consultaForm');
-        const resultDiv = document.getElementById('result');
-        const listaFeriadosDiv = document.getElementById('lista-feriados');
-        const startDateInput = document.getElementById('startDate');
-        const periodoInputs = [
-            document.getElementById('periodo1'),
-            document.getElementById('periodo2'),
-            document.getElementById('periodo3')
-        ];
-        const checkboxesFeriados = [];
+        <label for="city">Cidade:</label>
+        <select id="city">
+            <option value="">Selecione a cidade</option>
+        </select>
 
-        // Verifica se os elementos necessários existem
-        if (!citySelect || !stateSelect || !consultaForm || !resultDiv || !listaFeriadosDiv || !startDateInput) {
-            console.error('Um ou mais elementos necessários não foram encontrados no DOM.');
-            return;
-        }
+        <label for="startDate">Data de início:</label>
+        <input type="date" id="startDate">
 
-        function populateLocationSelects(citiesData) {
-            const states = {};
-            let saoPauloCities = [];
+        <label for="periodo1">Período 1 (dias):</label>
+        <input type="number" id="periodo1" min="0">
 
-            citiesData.forEach(item => {
-                if (!states[item.state]) {
-                    states[item.state] = [];
-                }
-                states[item.state].push(item.city);
-                if (item.state === 'SP') {
-                    saoPauloCities.push(item.city);
-                }
-            });
+        <label for="periodo2">Período 2 (dias):</label>
+        <input type="number" id="periodo2" min="0">
 
-            for (const state in states) {
-                const stateOption = document.createElement('option');
-                stateOption.value = state;
-                stateOption.textContent = state;
-                stateSelect.appendChild(stateOption);
-            }
+        <label for="periodo3">Período 3 (dias):</label>
+        <input type="number" id="periodo3" min="0">
 
-            stateSelect.addEventListener('change', function () {
-                citySelect.innerHTML = '<option value="">Selecione a cidade</option>';
-                const selectedState = this.value;
-                if (selectedState && states[selectedState]) {
-                    states[selectedState].forEach(city => {
-                        const cityOption = document.createElement('option');
-                        cityOption.value = city;
-                        cityOption.textContent = city;
-                        citySelect.appendChild(cityOption);
-                    });
-                }
-                buscarProximosFeriados(startDateInput.value, this.value);
-            });
+        <label for="bankHours">Banco de horas (dias):</label>
+        <input type="number" id="bankHours" min="0">
 
-            // Pré-selecionar SP e São Paulo
-            stateSelect.value = 'SP';
-            citySelect.innerHTML = '<option value="">Selecione a cidade</option>';
-            saoPauloCities.forEach(city => {
-                const cityOption = document.createElement('option');
-                cityOption.value = city;
-                cityOption.textContent = city;
-                citySelect.appendChild(cityOption);
-            });
-            citySelect.value = 'São Paulo';
+        <label for="destinations">Destinos preferidos:</label>
+        <select id="destinations" multiple>
+            <option value="Praia">Praia</option>
+            <option value="Cidade grande">Cidade grande</option>
+            <option value="Natureza">Natureza</option>
+            <option value="Montanha">Montanha</option>
+            <option value="Interior">Interior</option>
+            <option value="Neve">Neve</option>
+            <option value="Parques temáticos">Parques temáticos</option>
+            <option value="Outros">Outros</option>
+        </select>
 
-            // Chamada inicial para buscar feriados ao carregar a página
-            buscarProximosFeriados(startDateInput.value, stateSelect.value);
-        }
+        <button type="submit">Consultar</button>
+    </form>
 
-        fetch('/cities')
-            .then(response => response.json())
-            .then(data => populateLocationSelects(data))
-            .catch(error => console.error('Erro ao buscar cidades:', error));
+    <!-- Div para exibir os feriados -->
+    <div id="lista-feriados"></div>
 
-        function buscarProximosFeriados(startDate, uf) {
-            if (!uf) {
-                listaFeriadosDiv.innerHTML = '<p>Selecione o estado.</p>';
+    <!-- Div para exibir o resultado -->
+    <div id="result"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const citySelect = document.getElementById('city');
+            const stateSelect = document.getElementById('state');
+            const consultaForm = document.getElementById('consultaForm');
+            const resultDiv = document.getElementById('result');
+            const listaFeriadosDiv = document.getElementById('lista-feriados');
+            const startDateInput = document.getElementById('startDate');
+            const periodoInputs = [
+                document.getElementById('periodo1'),
+                document.getElementById('periodo2'),
+                document.getElementById('periodo3')
+            ];
+            const checkboxesFeriados = [];
+
+            // Verifica se os elementos necessários existem
+            if (!citySelect || !stateSelect || !consultaForm || !resultDiv || !listaFeriadosDiv || !startDateInput) {
+                console.error('Um ou mais elementos necessários não foram encontrados no DOM.');
                 return;
             }
 
-            fetch(`/proximos-feriados?startDate=${startDate}&uf=${uf}`)
-                .then(response => response.json())
-                .then(feriados => {
-                    listaFeriadosDiv.innerHTML = '';
-                    checkboxesFeriados.length = 0; // Limpar array anterior
-                    if (feriados && feriados.length > 0) {
-                        feriados.forEach(feriado => {
-                            const div = document.createElement('div');
-                            div.classList.add('feriado-item');
-                            const checkbox = document.createElement('input');
-                            checkbox.type = 'checkbox';
-                            checkbox.id = `feriado-${feriado.holiday.replace(/\s/g, '')}`;
-                            checkbox.name = 'feriadosSelecionados';
-                            checkbox.value = feriado.date_end;
-                            const label = document.createElement('label');
-                            label.htmlFor = checkbox.id;
-                            label.textContent = `${feriado.holiday} (${feriado.date_start} - ${feriado.date_end})`;
-                            div.appendChild(checkbox);
-                            div.appendChild(label);
-                            listaFeriadosDiv.appendChild(div);
-                            checkboxesFeriados.push(checkbox);
-                        });
-                        limitarSelecaoFeriados(); // Limitar após carregar os feriados
-                    } else {
-                        listaFeriadosDiv.innerHTML = '<p>Não há próximos feriados relevantes encontrados.</p>';
+            function populateLocationSelects(citiesData) {
+                const states = {};
+                let saoPauloCities = [];
+
+                citiesData.forEach(item => {
+                    if (!states[item.state]) {
+                        states[item.state] = [];
                     }
-                })
-                .catch(error => console.error('Erro ao buscar próximos feriados:', error));
-        }
+                    states[item.state].push(item.city);
+                    if (item.state === 'SP') {
+                        saoPauloCities.push(item.city);
+                    }
+                });
 
-        function limitarSelecaoFeriados() {
-            const periodosPreenchidos = periodoInputs.filter(input => parseInt(input.value, 10) > 0).length;
-            checkboxesFeriados.forEach((checkbox, index) => {
-                checkbox.disabled = index >= periodosPreenchidos;
-            });
-        }
+                for (const state in states) {
+                    const stateOption = document.createElement('option');
+                    stateOption.value = state;
+                    stateOption.textContent = state;
+                    stateSelect.appendChild(stateOption);
+                }
 
-        consultaForm.addEventListener('submit', function (e) {
-            e.preventDefault();
+                stateSelect.addEventListener('change', function () {
+                    citySelect.innerHTML = '<option value="">Selecione a cidade</option>';
+                    const selectedState = this.value;
+                    if (selectedState && states[selectedState]) {
+                        states[selectedState].forEach(city => {
+                            const cityOption = document.createElement('option');
+                            cityOption.value = city;
+                            cityOption.textContent = city;
+                            citySelect.appendChild(cityOption);
+                        });
+                    }
+                    buscarProximosFeriados(startDateInput.value, this.value);
+                });
 
-            const startDate = startDateInput.value;
-            const periodos = periodoInputs.map(input => parseInt(input.value, 10));
-            const bankHours = parseInt(document.getElementById('bankHours').value, 10);
-            const city = document.getElementById('city').value;
-            const state = stateSelect.value;
-            const destinations = Array.from(document.getElementById('destinations').selectedOptions).map(option => option.value);
-            const feriadosSelecionados = Array.from(document.querySelectorAll('input[name="feriadosSelecionados"]:checked'))
-                .map(checkbox => checkbox.value);
+                // Pré-selecionar SP e São Paulo
+                stateSelect.value = 'SP';
+                citySelect.innerHTML = '<option value="">Selecione a cidade</option>';
+                saoPauloCities.forEach(city => {
+                    const cityOption = document.createElement('option');
+                    cityOption.value = city;
+                    cityOption.textContent = city;
+                    citySelect.appendChild(cityOption);
+                });
+                citySelect.value = 'São Paulo';
 
-            const totalDias = periodos.reduce((sum, days) => sum + days, 0);
-            if (totalDias > 30) {
-                alert('A soma dos períodos de férias não pode exceder 30 dias.');
-                return;
+                // Chamada inicial para buscar feriados ao carregar a página
+                buscarProximosFeriados(startDateInput.value, stateSelect.value);
             }
 
-            fetch('/consultas', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ startDate, periodos, bankHours, city, state, destinations, feriadosSelecionados }),
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    resultDiv.innerHTML = `
-                        <h3>Resultado:</h3>
-                        <p>${data.result}</p>
-                        <button id="downloadPdf">Baixar PDF</button>
-                    `;
+            fetch('/cities')
+                .then(response => response.json())
+                .then(data => populateLocationSelects(data))
+                .catch(error => console.error('Erro ao buscar cidades:', error));
 
-                    document.getElementById('downloadPdf').addEventListener('click', function () {
-                        const { jsPDF } = window.jspdf;
-                        const doc = new jsPDF();
-                        const logoBase64 = "data:image/png;base64,..."; // Substitua pela sua logo
-                        doc.addImage(logoBase64, "PNG", 10, 10, 50, 20);
-                        doc.setFontSize(16);
-                        doc.text("Resultado da Consulta", 10, 40);
-                        const textLines = doc.splitTextToSize(data.result, 180);
-                        doc.setFontSize(12);
-                        doc.text(textLines, 10, 50);
-                        doc.save("resultado-consulta.pdf");
-                    });
+            function buscarProximosFeriados(startDate, uf) {
+                if (!uf) {
+                    listaFeriadosDiv.innerHTML = '<p>Selecione o estado.</p>';
+                    return;
+                }
+
+                fetch(`/proximos-feriados?startDate=${startDate}&uf=${uf}`)
+                    .then(response => response.json())
+                    .then(feriados => {
+                        listaFeriadosDiv.innerHTML = '';
+                        checkboxesFeriados.length = 0; // Limpar array anterior
+                        if (feriados && feriados.length > 0) {
+                            feriados.forEach(feriado => {
+                                const div = document.createElement('div');
+                                div.classList.add('feriado-item');
+                                const checkbox = document.createElement('input');
+                                checkbox.type = 'checkbox';
+                                checkbox.id = `feriado-${feriado.holiday.replace(/\s/g, '')}`;
+                                checkbox.name = 'feriadosSelecionados';
+                                checkbox.value = feriado.date_end;
+                                const label = document.createElement('label');
+                                label.htmlFor = checkbox.id;
+                                label.textContent = `${feriado.holiday} (${feriado.date_start} - ${feriado.date_end})`;
+                                div.appendChild(checkbox);
+                                div.appendChild(label);
+                                listaFeriadosDiv.appendChild(div);
+                                checkboxesFeriados.push(checkbox);
+                            });
+                            limitarSelecaoFeriados(); // Limitar após carregar os feriados
+                        } else {
+                            listaFeriadosDiv.innerHTML = '<p>Não há próximos feriados relevantes encontrados.</p>';
+                        }
+                    })
+                    .catch(error => console.error('Erro ao buscar próximos feriados:', error));
+            }
+
+            function limitarSelecaoFeriados() {
+                const periodosPreenchidos = periodoInputs.filter(input => parseInt(input.value, 10) > 0).length;
+                checkboxesFeriados.forEach((checkbox, index) => {
+                    checkbox.disabled = index >= periodosPreenchidos;
+                });
+            }
+
+            consultaForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const startDate = startDateInput.value;
+                const periodos = periodoInputs.map(input => parseInt(input.value, 10));
+                const bankHours = parseInt(document.getElementById('bankHours').value, 10);
+                const city = document.getElementById('city').value;
+                const state = stateSelect.value;
+                const destinations = Array.from(document.getElementById('destinations').selectedOptions).map(option => option.value);
+                const feriadosSelecionados = Array.from(document.querySelectorAll('input[name="feriadosSelecionados"]:checked'))
+                    .map(checkbox => checkbox.value);
+
+                const totalDias = periodos.reduce((sum, days) => sum + days, 0);
+                if (totalDias > 30) {
+                    alert('A soma dos períodos de férias não pode exceder 30 dias.');
+                    return;
+                }
+
+                fetch('/consultas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ startDate, periodos, bankHours, city, state, destinations, feriadosSelecionados }),
                 })
-                .catch(err => console.error('Erro:', err));
+                    .then((response) => response.json())
+                    .then((data) => {
+                        resultDiv.innerHTML = `
+                            <h3>Resultado:</h3>
+                            <p>${data.result}</p>
+                            <button id="downloadPdf">Baixar PDF</button>
+                        `;
+
+                        document.getElementById('downloadPdf').addEventListener('click', function () {
+                            const { jsPDF } = window.jspdf;
+                            const doc = new jsPDF();
+                            const logoBase64 = "data:image/png;base64,..."; // Substitua pela sua logo
+                            doc.addImage(logoBase64, "PNG", 10, 10, 50, 20);
+                            doc.setFontSize(16);
+                            doc.text("Resultado da Consulta", 10, 40);
+                            const textLines = doc.splitTextToSize(data.result, 180);
+                            doc.setFontSize(12);
+                            doc.text(textLines, 10, 50);
+                            doc.save("resultado-consulta.pdf");
+                        });
+                    })
+                    .catch(err => console.error('Erro:', err));
+            });
         });
-    });
-</script>
+    </script>
+</body>
+</html>
