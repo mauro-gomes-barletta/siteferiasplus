@@ -91,6 +91,7 @@
     <script>
         function buscarProximosFeriados(startDate, uf) {
                 const listaFeriadosDiv = document.getElementById('lista-feriados');
+                const periodsInput = document.getElementById('periods');
                 listaFeriadosDiv.innerHTML = '<p>Carregando...</p>'; // Mensagem de carregamento
 
                 if (!startDate || !uf) {
