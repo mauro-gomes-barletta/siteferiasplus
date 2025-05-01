@@ -293,7 +293,7 @@
            // Limpa o resultado anterior e exibe a mensagem de "Aguarde..."
             resultDiv.innerHTML = ''; // Limpa o conteúdo do resultado
             resultText.textContent = 'Aguarde, processando a consulta...';
-            downloadPdfButton.disabled = true;
+            downloadPdfButton.disabled = false;
 
             fetch('/consultas', {
                 method: 'POST',
