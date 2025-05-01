@@ -219,6 +219,8 @@
                 // Captura os feriados selecionados para iniciar as férias
                 const feriadosSelecionados = Array.from(document.querySelectorAll('input[name="feriadosSelecionados"]:checked'))
                     .map(checkbox => checkbox.value);
+                const resultText = document.getElementById('resultText')
+                resultText.textContent = 'Aguarde, processando a consulta...';
 
                 fetch('/consultas', {
                     method: 'POST',
@@ -229,6 +231,7 @@
                 })
                     .then((response) => response.json())
                     .then((data) => {
+                        resultText.textContent = data.result;
                         resultDiv.innerHTML = `
                             <h3>Resultado:</h3>
                             <p>${data.result}</p>
@@ -245,11 +248,11 @@
                             doc.text("Férias Plus - wwww.feriasplus.com.br", 10, 40);
 
                             doc.setFontSize(16);
-                            doc.text("Resultado da Consulta", 10, 40);
+                            doc.text("Resultado da Consulta", 10, 50);
 
                             const textLines = doc.splitTextToSize(data.result, 180);
                             doc.setFontSize(12);
-                            doc.text(textLines, 10, 50);
+                            doc.text(textLines, 10, 60);
 
                             doc.save("resultado-consulta.pdf");
                         });
