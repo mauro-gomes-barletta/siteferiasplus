@@ -45,14 +45,14 @@
             <label for="periods">Quantos períodos deseja fracionar (1 a 4):</label>
             <input type="number" id="periods" name="periods" min="1" max="4" required>
 
-            <label for="city">Cidade onde trabalha:</label>
-            <select id="city" name="city" required>
-                <option value="">Selecione a cidade</option>
-            </select>
-
             <label for="state">Estado onde trabalha:</label>
             <select id="state" name="state" required onchange="buscarProximosFeriados(document.getElementById('startDate').value, this.value)">
                 <option value="">Selecione o estado</option>
+            </select>
+            
+            <label for="city">Cidade onde trabalha:</label>
+            <select id="city" name="city" required>
+                <option value="">Selecione a cidade</option>    
             </select>
 
             <label for="destinations">Escolha seus destinos preferidos:</label>
@@ -90,6 +90,11 @@
             const listaFeriadosDiv = document.getElementById('lista-feriados');
             const startDateInput = document.getElementById('startDate');
             const stateInput = document.getElementById('state');
+
+            if (!consultaForm || !startDateInput || !stateInput || !citySelect || !resultDiv) {
+                console.error('Um ou mais elementos necessários não foram encontrados no DOM.');
+            return;
+    }
 
             function populateLocationSelects(citiesData) {
                 const states = {};
@@ -129,6 +134,9 @@
                 .catch(error => console.error('Erro ao buscar cidades:', error));
 
             function buscarProximosFeriados(startDate, uf) {
+                const listaFeriadosDiv = document.getElementById('lista-feriados');
+                listaFeriadosDiv.innerHTML = '<p>Carregando...</p>'; // Mensagem de carregamento
+
                 if (!startDate || !uf) {
                     listaFeriadosDiv.innerHTML = '<p>Selecione a data de início e o estado.</p>';
                     return;

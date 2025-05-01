@@ -159,9 +159,13 @@ app.post('/register', async (req, res) => {
 
 // Rota para processar consultas (a formatação da data aqui dependerá de como você quer usar no prompt da IA)
 app.post('/consultas', async (req, res) => {
-    const { startDate, daysAvailable, periods, bankHours, city, state, destinations, feriadosSelecionados } = req.body;
-
+    // Verifica se o corpo da requisição contém os dados necessários
     try {
+        const { startDate, daysAvailable, periods, bankHours, city, state, destinations, feriadosSelecionados } = req.body;
+        
+        if (!startDate || !daysAvailable || !periods || !state || !city) {
+            return res.status(400).json({ error: 'Todos os campos obrigatórios devem ser preenchidos.' });
+        }
         // Busca os feriados relevantes (nacionais e da localidade) para o período
         const holidaysResult = await pool.query(`
             SELECT holiday, date_start, date_end
@@ -199,24 +203,24 @@ app.post('/consultas', async (req, res) => {
         const prompt = `
             Considerando a data de início para minhas férias como ${formatDateForPrompt(startDate)}, com ${daysAvailable} dias de férias fracionáveis em até ${periods} períodos, e ${bankHours} dias de banco de horas disponíveis, e levando em conta os seguintes feriados (nacionais, estaduais de ${state}, e municipais de ${city}): ${formattedRelevantHolidays}.
 
-${feriadosParaEmenda}
+            ${feriadosParaEmenda}
 
-Objetivo PRIMÁRIO: Encontrar os melhores períodos para tirar férias, de forma que CADA período de férias, sempre que possível e respeitando a escolha do usuário, comece NO DIA SEGUINTE ao término de um feriado (nacional, estadual ou municipal) OU termine NO DIA ANTERIOR ao início de um feriado. Se o término do feriado for em uma sexta, sábado ou domingo, o início ideal das férias é na segunda-feira seguinte. O objetivo é MAXIMIZAR a duração total da folga (férias + feriados emendados).
+            Objetivo PRIMÁRIO: Encontrar os melhores períodos para tirar férias, de forma que CADA período de férias, sempre que possível e respeitando a escolha do usuário, comece NO DIA SEGUINTE ao término de um feriado (nacional, estadual ou municipal) OU termine NO DIA ANTERIOR ao início de um feriado. Se o término do feriado for em uma sexta, sábado ou domingo, o início ideal das férias é na segunda-feira seguinte. O objetivo é MAXIMIZAR a duração total da folga (férias + feriados emendados).
 
-Restrições:
-- Duração mínima de cada período de férias: 5 dias.
-- Duração máxima de cada período de férias: 30 dias.
-- Respeitar o limite de ${periods} fracionamentos.
+            Restrições:
+            - Duração mínima de cada período de férias: 5 dias.
+            - Duração máxima de cada período de férias: 30 dias.
+            - Respeitar o limite de ${periods} fracionamentos.
 
-Destinos preferidos: ${destinationsList}.
+            Destinos preferidos: ${destinationsList}.
 
-Formato da resposta:
-1. Período de férias 1: Início em [data formatada], término em [data formatada], total de [número de dias] de férias (emendando o feriado de [nome do feriado]).
-2. Período de férias 2: Início em [data formatada], término em [data formatada], total de [número de dias] de férias (terminando antes do feriado de [nome do feriado]).
-... (até ${periods} períodos)
-3. Sugestões de destinos e atividades (concisas e relevantes para os períodos de férias e preferências): [destino 1]: [atividade 1], [destino 2]: [atividade 2], ...
+            Formato da resposta:
+            1. Período de férias 1: Início em [data formatada], término em [data formatada], total de [número de dias] de férias (emendando o feriado de [nome do feriado]).
+            2. Período de férias 2: Início em [data formatada], término em [data formatada], total de [número de dias] de férias (terminando antes do feriado de [nome do feriado]).
+            ... (até ${periods} períodos)
+            3. Sugestões de destinos e atividades (concisas e relevantes para os períodos de férias e preferências): [destino 1]: [atividade 1], [destino 2]: [atividade 2], ...
 
-Mantenha a resposta concisa para otimizar o uso de tokens (máximo 500 tokens). Inclua apenas as informações solicitadas.
+            Mantenha a resposta concisa para otimizar o uso de tokens (máximo 500 tokens). Inclua apenas as informações solicitadas.
         `;
 
         // Chama a API da OpenAI
