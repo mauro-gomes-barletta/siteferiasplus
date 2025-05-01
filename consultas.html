@@ -136,11 +136,23 @@
             const stateInput = document.getElementById('state');
             const bankHoursInput = document.getElementById('bankHours');
             const bankHours = bankHoursInput ? parseInt(bankHoursInput.value, 10) : 0;
+            const periodsInput = document.getElementById('periods');
+            const feriadosCheckboxes = document.querySelectorAll('input[name="feriadosSelecionados"]');
 
             if (!consultaForm || !startDateInput || !stateInput || !citySelect || !resultDiv) {
                 console.error('Um ou mais elementos necessários não foram encontrados no DOM.');
             return;
-    }
+            }
+
+            function atualizarPeriodos() {
+                const selecionados = Array.from(feriadosCheckboxes).filter(checkbox => checkbox.checked).length;
+                periodsInput.value = Math.min(selecionados, 4); // Limita o valor máximo a 4
+            }
+            
+            // Adiciona o evento de mudança para cada checkbox de feriado
+            document.getElementById('lista-feriados').addEventListener('change', function () {
+                atualizarPeriodos();
+            });
 
             function populateLocationSelects(citiesData) {
                 const states = {};
@@ -171,6 +183,7 @@
                     }
                     // Buscar feriados ao mudar o estado
                     buscarProximosFeriados(startDateInput.value, this.value);
+
                 });
             }
 
