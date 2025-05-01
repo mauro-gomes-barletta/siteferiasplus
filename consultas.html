@@ -186,8 +186,9 @@
                 const city = document.getElementById('city').value;
                 const state = stateSelect.value;;
                 const destinations = Array.from(document.getElementById('destinations').selectedOptions).map(option => option.value);
-                const bankHours = bankHoursInput ? parseInt(bankHoursInput.value, 10) : 0;
                 const bankHoursInput = document.getElementById('bankHours');
+                const bankHours = bankHoursInput ? parseInt(bankHoursInput.value, 10) : 0;
+                
                 
 
                 // Captura os feriados selecionados para iniciar as férias
