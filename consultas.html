@@ -82,6 +82,43 @@
         <p>&copy; 2025 FériasPlus. Todos os direitos reservados.</p>
     </footer>
     <script>
+        function buscarProximosFeriados(startDate, uf) {
+                const listaFeriadosDiv = document.getElementById('lista-feriados');
+                listaFeriadosDiv.innerHTML = '<p>Carregando...</p>'; // Mensagem de carregamento
+
+                if (!startDate || !uf) {
+                    listaFeriadosDiv.innerHTML = '<p>Selecione a data de início e o estado.</p>';
+                    return;
+                }
+
+                fetch(`/proximos-feriados?startDate=${startDate}&uf=${uf}`)
+                    .then(response => response.json())
+                    .then(feriados => {
+                        listaFeriadosDiv.innerHTML = '';
+                        if (feriados && feriados.length > 0) {
+                            feriados.forEach(feriado => {
+                                const div = document.createElement('div');
+                                div.classList.add('feriado-item');
+                                const checkbox = document.createElement('input');
+                                checkbox.type = 'checkbox';
+                                checkbox.id = `feriado-${feriado.holiday.replace(/\s/g, '')}`;
+                                checkbox.name = 'feriadosSelecionados';
+                                checkbox.value = feriado.date_end; // Usar a data final do feriado como referência
+                                const label = document.createElement('label');
+                                label.htmlFor = checkbox.id;
+                                label.textContent = `${feriado.holiday} (${feriado.date_start} - ${feriado.date_end})`;
+                                div.appendChild(checkbox);
+                                div.appendChild(label);
+                                listaFeriadosDiv.appendChild(div);
+                            });
+                        } else {
+                            listaFeriadosDiv.innerHTML = '<p>Não há próximos feriados relevantes encontrados.</p>';
+                        }
+                    })
+                    .catch(error => console.error('Erro ao buscar próximos feriados:', error));
+            }
+
+
         document.addEventListener('DOMContentLoaded', function () {
             const citySelect = document.getElementById('city');
             const stateSelect = document.getElementById('state');
@@ -133,41 +170,7 @@
                 .then(data => populateLocationSelects(data))
                 .catch(error => console.error('Erro ao buscar cidades:', error));
 
-            function buscarProximosFeriados(startDate, uf) {
-                const listaFeriadosDiv = document.getElementById('lista-feriados');
-                listaFeriadosDiv.innerHTML = '<p>Carregando...</p>'; // Mensagem de carregamento
-
-                if (!startDate || !uf) {
-                    listaFeriadosDiv.innerHTML = '<p>Selecione a data de início e o estado.</p>';
-                    return;
-                }
-
-                fetch(`/proximos-feriados?startDate=${startDate}&uf=${uf}`)
-                    .then(response => response.json())
-                    .then(feriados => {
-                        listaFeriadosDiv.innerHTML = '';
-                        if (feriados && feriados.length > 0) {
-                            feriados.forEach(feriado => {
-                                const div = document.createElement('div');
-                                div.classList.add('feriado-item');
-                                const checkbox = document.createElement('input');
-                                checkbox.type = 'checkbox';
-                                checkbox.id = `feriado-${feriado.holiday.replace(/\s/g, '')}`;
-                                checkbox.name = 'feriadosSelecionados';
-                                checkbox.value = feriado.date_end; // Usar a data final do feriado como referência
-                                const label = document.createElement('label');
-                                label.htmlFor = checkbox.id;
-                                label.textContent = `${feriado.holiday} (${feriado.date_start} - ${feriado.date_end})`;
-                                div.appendChild(checkbox);
-                                div.appendChild(label);
-                                listaFeriadosDiv.appendChild(div);
-                            });
-                        } else {
-                            listaFeriadosDiv.innerHTML = '<p>Não há próximos feriados relevantes encontrados.</p>';
-                        }
-                    })
-                    .catch(error => console.error('Erro ao buscar próximos feriados:', error));
-            }
+            
 
             consultaForm.addEventListener('submit', function (e) {
                 e.preventDefault();
@@ -177,7 +180,7 @@
                 const periods = parseInt(document.getElementById('periods').value, 10);
                 const bankHours = parseInt(document.getElementById('bankHours').value, 10);
                 const city = document.getElementById('city').value;
-                const state = stateInput.value;
+                const state = stateSelect.value;;
                 const destinations = Array.from(document.getElementById('destinations').selectedOptions).map(option => option.value);
 
                 // Captura os feriados selecionados para iniciar as férias
