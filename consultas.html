@@ -80,10 +80,10 @@
 
             <div id="buttons">
                 <button id="consultarButton" type="button">Consultar</button>
-                <button id="downloadPdf" disabled>Baixar PDF</button>
+                <button id="downloadPdf" type="button">Baixar PDF</button>
             </div>
 
-            <button type="submit">Consultar</button>
+            
         </form>
 
         <div id="result"><h3>Resultado:</h3><p id="resultText"></p></div>
@@ -290,7 +290,8 @@
             const feriadosSelecionados = Array.from(document.querySelectorAll('input[name="feriadosSelecionados"]:checked'))
                 .map(checkbox => checkbox.value);
 
-            // Exibe a mensagem de "Aguarde..."
+           // Limpa o resultado anterior e exibe a mensagem de "Aguarde..."
+            resultDiv.innerHTML = ''; // Limpa o conteúdo do resultado
             resultText.textContent = 'Aguarde, processando a consulta...';
             downloadPdfButton.disabled = true;
 
