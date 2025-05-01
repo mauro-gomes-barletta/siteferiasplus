@@ -304,8 +304,12 @@
                         resultText.textContent = data.result;
                         downloadPdfButton.disabled = false;
 
+                        // Remove qualquer evento anterior do botão "Baixar PDF" para evitar múltiplos cliques
+                        downloadPdfButton.replaceWith(downloadPdfButton.cloneNode(true));
+                        const newDownloadPdfButton = document.getElementById('downloadPdf');
+
                         // Adiciona o evento de clique ao botão "Baixar PDF"
-                        downloadPdfButton.addEventListener('click', function () {
+                        newDownloadPdfButton.addEventListener('click', function () {
                             const { jsPDF } = window.jspdf;
                             const doc = new jsPDF();
 
