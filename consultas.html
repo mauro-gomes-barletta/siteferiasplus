@@ -118,6 +118,12 @@
                                 div.appendChild(label);
                                 listaFeriadosDiv.appendChild(div);
                             });
+                            // Atualiza os períodos automaticamente ao selecionar feriados
+                            listaFeriadosDiv.addEventListener('change', function () {
+                                const selecionados = Array.from(document.querySelectorAll('input[name="feriadosSelecionados"]:checked')).length;
+                                periodsInput.value = Math.min(selecionados, 4); // Limita o valor máximo a 4
+                            });    
+
                         } else {
                             listaFeriadosDiv.innerHTML = '<p>Não há próximos feriados relevantes encontrados.</p>';
                         }
@@ -144,10 +150,6 @@
             return;
             }
 
-            function atualizarPeriodos() {
-                const selecionados = Array.from(feriadosCheckboxes).filter(checkbox => checkbox.checked).length;
-                periodsInput.value = Math.min(selecionados, 4); // Limita o valor máximo a 4
-            }
             
             // Adiciona o evento de mudança para cada checkbox de feriado
             document.getElementById('lista-feriados').addEventListener('change', function () {
