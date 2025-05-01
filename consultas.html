@@ -149,7 +149,12 @@
                 console.error('Um ou mais elementos necessários não foram encontrados no DOM.');
             return;
             }
-
+            
+            // Inicializa o valor de períodos com 1
+            function atualizarPeriodos() {
+               const selecionados = Array.from(feriadosCheckboxes).filter(checkbox => checkbox.checked).length;
+            periodsInput.value = Math.min(selecionados, 4); // Limita o valor máximo a 4
+            }
             
             // Adiciona o evento de mudança para cada checkbox de feriado
             document.getElementById('lista-feriados').addEventListener('change', function () {
