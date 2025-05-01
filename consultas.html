@@ -39,6 +39,22 @@
             <label for="startDate">Data de início das férias:</label>
             <input type="date" id="startDate" name="startDate" required onchange="buscarProximosFeriados(this.value, document.getElementById('state').value)">
 
+            <label for="state">Estado onde trabalha:</label>
+            <select id="state" name="state" required onchange="buscarProximosFeriados(document.getElementById('startDate').value, this.value)">
+                <option value="">Selecione o estado</option>
+            </select>
+
+            <label for="city">Cidade onde trabalha:</label>
+            <select id="city" name="city" required>
+                <option value="">Selecione a cidade</option>    
+            </select>
+
+            <div id="feriados-proximos">
+                <h3>Próximos Feriados Relevantes:</h3>
+                <p>Selecione os feriados para iniciar suas férias no dia seguinte:</p>
+                <div id="lista-feriados"></div>
+            </div>
+            
             <label for="daysAvailable">Quantidade de dias disponíveis:</label>
             <input type="number" id="daysAvailable" name="daysAvailable" min="1" required>
 
@@ -48,15 +64,7 @@
             <label for="periods">Quantos períodos deseja fracionar (1 a 4):</label>
             <input type="number" id="periods" name="periods" min="1" max="4" required>
 
-            <label for="state">Estado onde trabalha:</label>
-            <select id="state" name="state" required onchange="buscarProximosFeriados(document.getElementById('startDate').value, this.value)">
-                <option value="">Selecione o estado</option>
-            </select>
             
-            <label for="city">Cidade onde trabalha:</label>
-            <select id="city" name="city" required>
-                <option value="">Selecione a cidade</option>    
-            </select>
 
             <label for="destinations">Escolha seus destinos preferidos:</label>
             <select id="destinations" name="destinations" multiple>
@@ -70,11 +78,7 @@
                 <option value="Outros">Outros</option>
             </select>
 
-            <div id="feriados-proximos">
-                <h3>Próximos Feriados Relevantes:</h3>
-                <p>Selecione os feriados para iniciar suas férias no dia seguinte:</p>
-                <div id="lista-feriados"></div>
-            </div>
+            
 
             <button type="submit">Consultar</button>
         </form>
