@@ -78,12 +78,7 @@
                 <option value="Outros">Outros</option>
             </select>
 
-            <div id="buttons">
-                <button id="consultarButton" type="button">Consultar</button>
-                <button id="downloadPdf" type="button">Baixar PDF</button>
-            </div>
-
-            
+            <button type="submit">Consultar</button>
         </form>
 
         <div id="result"><h3>Resultado:</h3><p id="resultText"></p></div>
@@ -291,9 +286,9 @@
                 .map(checkbox => checkbox.value);
 
            // Limpa o resultado anterior e exibe a mensagem de "Aguarde..."
-            resultDiv.innerHTML = ''; // Limpa o conteúdo do resultado
+            resultText.textContent = ''; // Limpa o conteúdo do resultado
             resultText.textContent = 'Aguarde, processando a consulta...';
-            downloadPdfButton.disabled = false;
+            downloadPdfButton.disabled = true;
 
             fetch('/consultas', {
                 method: 'POST',
