@@ -270,30 +270,28 @@
             const consultaForm = document.getElementById('consultaForm');
             const resultDiv = document.getElementById('result');
             const resultText = document.getElementById('resultText');
-            const startDateInput = document.getElementById('startDate');
-            const stateSelect = document.getElementById('state');
-            const citySelect = document.getElementById('city');
-            const destinationsSelect = document.getElementById('destinations');
-            const periodsInput = document.getElementById('periods');
-            const bankHoursInput = document.getElementById('bankHours');
 
             consultaForm.addEventListener('submit', function (e) {
                 e.preventDefault(); // Impede o comportamento padrão do formulário
 
-                const startDate = startDateInput.value;
+                const startDate = document.getElementById('startDate').value;
                 const daysAvailable = parseInt(document.getElementById('daysAvailable').value, 10);
-                const periods = parseInt(periodsInput.value, 10);
-                const city = citySelect.value;
-                const state = stateSelect.value;
-                const destinations = Array.from(destinationsSelect.selectedOptions).map(option => option.value);
-                const bankHours = bankHoursInput ? parseInt(bankHoursInput.value, 10) : 0;
+                const periods = parseInt(document.getElementById('periods').value, 10);
+                const city = document.getElementById('city').value;
+                const state = document.getElementById('state').value;
+                const destinations = Array.from(document.getElementById('destinations').selectedOptions).map(option => option.value);
+                const bankHours = parseInt(document.getElementById('bankHours').value, 10) || 0;
 
                 const feriadosSelecionados = Array.from(document.querySelectorAll('input[name="feriadosSelecionados"]:checked'))
                     .map(checkbox => checkbox.value);
 
                 // Limpa o resultado anterior e exibe a mensagem de "Aguarde..."
-                resultDiv.innerHTML = ''; // Limpa o conteúdo do resultado
-                resultText.textContent = 'Aguarde, processando a consulta...';
+                if (resultText) {
+                    resultText.textContent = 'Aguarde, processando a consulta...';
+                } else {
+                    console.error('Elemento #resultText não encontrado no DOM.');
+                    return;
+                }
 
                 fetch('/consultas', {
                     method: 'POST',
@@ -304,12 +302,20 @@
                 })
                     .then((response) => response.json())
                     .then((data) => {
-                        // Exibe o resultado
-                        resultText.textContent = data.result;
+                        // Atualiza o texto do resultado
+                        if (resultText) {
+                            resultText.textContent = data.result;
+                        }
 
                         // Adiciona o botão "Baixar PDF"
-                        const downloadPdfButton = document.createElement('button');
-                        downloadPdfButton.textContent = 'Baixar PDF';
+                        let downloadPdfButton = document.getElementById('downloadPdf');
+                        if (!downloadPdfButton) {
+                            downloadPdfButton = document.createElement('button');
+                            downloadPdfButton.id = 'downloadPdf';
+                            downloadPdfButton.textContent = 'Baixar PDF';
+                            resultDiv.appendChild(downloadPdfButton);
+                        }
+
                         downloadPdfButton.addEventListener('click', function () {
                             const { jsPDF } = window.jspdf;
                             const doc = new jsPDF();
@@ -326,15 +332,16 @@
 
                             doc.save("resultado-consulta.pdf");
                         });
-
-                        resultDiv.appendChild(downloadPdfButton);
                     })
                     .catch(err => {
                         console.error('Erro:', err);
-                        resultText.textContent = 'Erro ao processar a consulta. Tente novamente.';
+                        if (resultText) {
+                            resultText.textContent = 'Erro ao processar a consulta. Tente novamente.';
+                        }
                     });
             });
         });
     </script>
 </body>
 </html>
+``` 
