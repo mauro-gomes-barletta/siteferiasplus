@@ -263,10 +263,9 @@
         });
 
         document.addEventListener('DOMContentLoaded', function () {
-            const consultarButton = document.getElementById('consultarButton');
-            const downloadPdfButton = document.getElementById('downloadPdf');
-            const resultText = document.getElementById('resultText');
+            const consultaForm = document.getElementById('consultaForm');
             const resultDiv = document.getElementById('result');
+            const resultText = document.getElementById('resultText');
             const startDateInput = document.getElementById('startDate');
             const stateSelect = document.getElementById('state');
             const citySelect = document.getElementById('city');
@@ -274,7 +273,9 @@
             const periodsInput = document.getElementById('periods');
             const bankHoursInput = document.getElementById('bankHours');
 
-            function enviarConsulta() {
+            consultaForm.addEventListener('submit', function (e) {
+                e.preventDefault(); // Impede o comportamento padrão do formulário
+
                 const startDate = startDateInput.value;
                 const daysAvailable = parseInt(document.getElementById('daysAvailable').value, 10);
                 const periods = parseInt(periodsInput.value, 10);
@@ -289,7 +290,6 @@
                 // Limpa o resultado anterior e exibe a mensagem de "Aguarde..."
                 resultDiv.innerHTML = ''; // Limpa o conteúdo do resultado
                 resultText.textContent = 'Aguarde, processando a consulta...';
-                downloadPdfButton.disabled = true;
 
                 fetch('/consultas', {
                     method: 'POST',
@@ -300,16 +300,13 @@
                 })
                     .then((response) => response.json())
                     .then((data) => {
-                        // Exibe o resultado e habilita o botão "Baixar PDF"
+                        // Exibe o resultado
                         resultText.textContent = data.result;
-                        downloadPdfButton.disabled = false;
 
-                        // Remove qualquer evento anterior do botão "Baixar PDF" para evitar múltiplos cliques
-                        downloadPdfButton.replaceWith(downloadPdfButton.cloneNode(true));
-                        const newDownloadPdfButton = document.getElementById('downloadPdf');
-
-                        // Adiciona o evento de clique ao botão "Baixar PDF"
-                        newDownloadPdfButton.addEventListener('click', function () {
+                        // Adiciona o botão "Baixar PDF"
+                        const downloadPdfButton = document.createElement('button');
+                        downloadPdfButton.textContent = 'Baixar PDF';
+                        downloadPdfButton.addEventListener('click', function () {
                             const { jsPDF } = window.jspdf;
                             const doc = new jsPDF();
 
@@ -325,16 +322,16 @@
 
                             doc.save("resultado-consulta.pdf");
                         });
+
+                        resultDiv.appendChild(downloadPdfButton);
                     })
                     .catch(err => {
                         console.error('Erro:', err);
                         resultText.textContent = 'Erro ao processar a consulta. Tente novamente.';
                     });
-            }
-
-            // Adiciona o evento ao botão "Consultar"
-            consultarButton.addEventListener('click', enviarConsulta);
+            });
         });
     </script>
 </body>
 </html>
+``` 
