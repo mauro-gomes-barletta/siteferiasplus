@@ -262,73 +262,75 @@
     });
         });
 
-        const consultarButton = document.getElementById('consultarButton');
-        const downloadPdfButton = document.getElementById('downloadPdf');
-        const resultText = document.getElementById('resultText');
-        const resultDiv = document.getElementById('result');
-        const startDateInput = document.getElementById('startDate');
-        const stateSelect = document.getElementById('state');
-        const citySelect = document.getElementById('city');
-        const destinationsSelect = document.getElementById('destinations');
-        const periodsInput = document.getElementById('periods');
-        const bankHoursInput = document.getElementById('bankHours');
+        document.addEventListener('DOMContentLoaded', function () {
+            const consultarButton = document.getElementById('consultarButton');
+            const downloadPdfButton = document.getElementById('downloadPdf');
+            const resultText = document.getElementById('resultText');
+            const resultDiv = document.getElementById('result');
+            const startDateInput = document.getElementById('startDate');
+            const stateSelect = document.getElementById('state');
+            const citySelect = document.getElementById('city');
+            const destinationsSelect = document.getElementById('destinations');
+            const periodsInput = document.getElementById('periods');
+            const bankHoursInput = document.getElementById('bankHours');
 
-        function enviarConsulta() {
-            const startDate = startDateInput.value;
-            const daysAvailable = parseInt(document.getElementById('daysAvailable').value, 10);
-            const periods = parseInt(periodsInput.value, 10);
-            const city = citySelect.value;
-            const state = stateSelect.value;
-            const destinations = Array.from(destinationsSelect.selectedOptions).map(option => option.value);
-            const bankHours = bankHoursInput ? parseInt(bankHoursInput.value, 10) : 0;
+            function enviarConsulta() {
+                const startDate = startDateInput.value;
+                const daysAvailable = parseInt(document.getElementById('daysAvailable').value, 10);
+                const periods = parseInt(periodsInput.value, 10);
+                const city = citySelect.value;
+                const state = stateSelect.value;
+                const destinations = Array.from(destinationsSelect.selectedOptions).map(option => option.value);
+                const bankHours = bankHoursInput ? parseInt(bankHoursInput.value, 10) : 0;
 
-            const feriadosSelecionados = Array.from(document.querySelectorAll('input[name="feriadosSelecionados"]:checked'))
-                .map(checkbox => checkbox.value);
+                const feriadosSelecionados = Array.from(document.querySelectorAll('input[name="feriadosSelecionados"]:checked'))
+                    .map(checkbox => checkbox.value);
 
-           // Limpa o resultado anterior e exibe a mensagem de "Aguarde..."
-            resultText.textContent = ''; // Limpa o conteúdo do resultado
-            resultText.textContent = 'Aguarde, processando a consulta...';
-            downloadPdfButton.disabled = true;
+                // Limpa o resultado anterior e exibe a mensagem de "Aguarde..."
+                resultDiv.innerHTML = ''; // Limpa o conteúdo do resultado
+                resultText.textContent = 'Aguarde, processando a consulta...';
+                downloadPdfButton.disabled = true;
 
-            fetch('/consultas', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ startDate, daysAvailable, periods, bankHours, city, state, destinations, feriadosSelecionados }),
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    // Exibe o resultado e habilita o botão "Baixar PDF"
-                    resultText.textContent = data.result;
-                    downloadPdfButton.disabled = false;
-
-                    // Adiciona o evento de clique ao botão "Baixar PDF"
-                    downloadPdfButton.addEventListener('click', function () {
-                        const { jsPDF } = window.jspdf;
-                        const doc = new jsPDF();
-
-                        doc.setFontSize(25);
-                        doc.text("Férias Plus - www.feriasplus.com.br", 10, 40);
-
-                        doc.setFontSize(16);
-                        doc.text("Resultado da Consulta", 10, 50);
-
-                        const textLines = doc.splitTextToSize(data.result, 180);
-                        doc.setFontSize(12);
-                        doc.text(textLines, 10, 60);
-
-                        doc.save("resultado-consulta.pdf");
-                    });
+                fetch('/consultas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ startDate, daysAvailable, periods, bankHours, city, state, destinations, feriadosSelecionados }),
                 })
-                .catch(err => {
-                    console.error('Erro:', err);
-                    resultText.textContent = 'Erro ao processar a consulta. Tente novamente.';
-                });
-        }
+                    .then((response) => response.json())
+                    .then((data) => {
+                        // Exibe o resultado e habilita o botão "Baixar PDF"
+                        resultText.textContent = data.result;
+                        downloadPdfButton.disabled = false;
 
-        // Adiciona o evento ao botão "Consultar"
-        consultarButton.addEventListener('click', enviarConsulta);
+                        // Adiciona o evento de clique ao botão "Baixar PDF"
+                        downloadPdfButton.addEventListener('click', function () {
+                            const { jsPDF } = window.jspdf;
+                            const doc = new jsPDF();
+
+                            doc.setFontSize(25);
+                            doc.text("Férias Plus - www.feriasplus.com.br", 10, 40);
+
+                            doc.setFontSize(16);
+                            doc.text("Resultado da Consulta", 10, 50);
+
+                            const textLines = doc.splitTextToSize(data.result, 180);
+                            doc.setFontSize(12);
+                            doc.text(textLines, 10, 60);
+
+                            doc.save("resultado-consulta.pdf");
+                        });
+                    })
+                    .catch(err => {
+                        console.error('Erro:', err);
+                        resultText.textContent = 'Erro ao processar a consulta. Tente novamente.';
+                    });
+            }
+
+            // Adiciona o evento ao botão "Consultar"
+            consultarButton.addEventListener('click', enviarConsulta);
+        });
     </script>
 </body>
 </html>
