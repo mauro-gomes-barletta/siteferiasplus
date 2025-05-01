@@ -201,7 +201,9 @@ app.post('/consultas', async (req, res) => {
 
         // Gera o prompt para a IA, incluindo os feriados relevantes e a preferência de emenda
         const prompt = `
-            Considerando a data de início para minhas férias como ${formatDateForPrompt(startDate)}, com ${daysAvailable} dias de férias fracionáveis em até ${periods} períodos, e ${bankHours} dias de banco de horas disponíveis, e levando em conta os seguintes feriados (nacionais, estaduais de ${state}, e municipais de ${city}): ${formattedRelevantHolidays}.
+            Considerando a data de início para minhas férias como ${formatDateForPrompt(startDate)}, 
+            com ${daysAvailable} dias de férias fracionáveis em até ${periods} períodos, e ${bankHours} dias de banco de horas disponíveis, 
+            e levando em conta os seguintes feriados (nacionais, estaduais de ${state}, e municipais de ${city}): ${formattedRelevantHolidays}.
 
             ${feriadosParaEmenda}
 
@@ -211,12 +213,14 @@ app.post('/consultas', async (req, res) => {
             - Duração mínima de cada período de férias: 5 dias.
             - Duração máxima de cada período de férias: 30 dias.
             - Respeitar o limite de ${periods} fracionamentos.
+            - Você deve somar os dias de banco de horas disponíveis aos dias de férias.
+            - Todos os dias de férias devem ser utilizados até o final do ano corrente.
 
             Destinos preferidos: ${destinationsList}.
 
             Formato da resposta:
-            1. Período de férias 1: Início em [data formatada], término em [data formatada], total de [número de dias] de férias (emendando o feriado de [nome do feriado]).
-            2. Período de férias 2: Início em [data formatada], término em [data formatada], total de [número de dias] de férias (terminando antes do feriado de [nome do feriado]).
+            1. Período de férias 1: Início em [data], término em [data], total de [número de dias] de férias.
+            2. Período de férias 2: Início em [data], término em [data], total de [número de dias] de férias.
             ... (até ${periods} períodos)
             3. Sugestões de destinos e atividades (concisas e relevantes para os períodos de férias e preferências): [destino 1]: [atividade 1], [destino 2]: [atividade 2], ...
 
